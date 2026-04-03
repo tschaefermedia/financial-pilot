@@ -10,6 +10,12 @@ fi
 mkdir -p /var/www/html/public/build
 cp -r /opt/app-source/public/build/. /var/www/html/public/build/
 
+# Create .env from example if it doesn't exist
+if [ ! -f /var/www/html/.env ]; then
+    echo "Creating .env from .env.example..."
+    cp /var/www/html/.env.example /var/www/html/.env
+fi
+
 # Ensure storage and cache directories exist and are writable
 mkdir -p /var/www/html/storage/logs
 mkdir -p /var/www/html/storage/framework/cache
@@ -24,6 +30,14 @@ mkdir -p /var/www/html/database
 touch /var/www/html/database/database.sqlite
 
 # Fix permissions
-chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database /var/www/html/.env
+
+# Generate app key if not set
+if grep -q "^APP_KEY=$" /var/www/html/.env; then
+    php /var/www/html/artisan key:generate --force
+fi
+
+# Run migrations automatically
+php /var/www/html/artisan migrate --force 2>/dev/null
 
 exec "$@"

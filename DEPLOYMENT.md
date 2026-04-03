@@ -35,7 +35,6 @@ services:
     image: ghcr.io/tschaefermedia/finanzpilot:latest
     volumes:
       - app-data:/var/www/html
-      - ./.env:/var/www/html/.env
       - ./database:/var/www/html/database
 
 volumes:
@@ -64,33 +63,25 @@ server {
 }
 ```
 
-### 4. Create .env
-
-```env
-APP_NAME=FinanzPilot
-APP_ENV=production
-APP_KEY=
-APP_DEBUG=false
-APP_URL=http://localhost
-
-DB_CONNECTION=sqlite
-SESSION_DRIVER=file
-CACHE_STORE=file
-QUEUE_CONNECTION=sync
-```
-
-### 5. Start and initialize
+### 4. Start
 
 ```bash
 mkdir -p database
 docker compose up -d
-docker compose exec php composer install --no-dev --optimize-autoloader
-docker compose exec php php artisan key:generate
-docker compose exec php php artisan migrate --force
-docker compose exec php php artisan db:seed --force
 ```
 
+On first start, the entrypoint automatically:
+- Creates `.env` from defaults
+- Generates the application key
+- Runs database migrations
+- Sets all file permissions
+
 The app is now running at `http://<your-server-ip>`.
+
+To seed the default German categories:
+```bash
+docker compose exec php php artisan db:seed --force
+```
 
 ### Updating to a new version
 
