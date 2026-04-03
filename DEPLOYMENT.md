@@ -142,21 +142,50 @@ docker compose exec php php artisan migrate --force
 
 ---
 
-## Environment Configuration
+## Environment Variables Reference
 
-```env
-APP_NAME=FinanzPilot
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://finanzpilot.yourdomain.com
+All variables can be set via Docker Compose `environment:`, a bind-mounted `.env` file, or the auto-generated `.env` inside the container.
 
-DB_CONNECTION=sqlite
-SESSION_DRIVER=file
-CACHE_STORE=file
-QUEUE_CONNECTION=sync
-```
+### Application
 
-AI is configured through the Settings page in the app (stored in the database, not .env).
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `APP_NAME` | `FinanzPilot` | Application name (shown in browser tab) |
+| `APP_ENV` | `production` | Environment: `production` or `local` |
+| `APP_KEY` | *(auto-generated)* | Encryption key — generated automatically on first start |
+| `APP_DEBUG` | `false` | Set `true` for detailed error pages (development only) |
+| `APP_URL` | `http://localhost` | Public URL (used in exports, links) |
+| `APP_LOCALE` | `de` | Application locale |
+
+### Database
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_CONNECTION` | `sqlite` | Database driver (only `sqlite` is supported) |
+
+### Session & Cache
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SESSION_DRIVER` | `file` | Session storage: `file`, `cookie`, `array` |
+| `SESSION_LIFETIME` | `120` | Session timeout in minutes |
+| `CACHE_STORE` | `file` | Cache backend: `file`, `array` |
+| `QUEUE_CONNECTION` | `sync` | Queue driver: `sync` (recommended) |
+
+### Logging
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LOG_CHANNEL` | `stack` | Log channel |
+| `LOG_STACK` | `single` | Stack channels |
+| `LOG_LEVEL` | `error` | Minimum log level: `debug`, `info`, `warning`, `error` |
+
+### AI Configuration
+
+AI provider settings are managed through the **Settings** page in the app and stored in the database — not in `.env`. Supported providers:
+- **Claude** (Anthropic API)
+- **OpenAI** / OpenAI-compatible APIs
+- **Ollama** (local, fully offline)
 
 ---
 
