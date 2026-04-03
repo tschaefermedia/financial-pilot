@@ -23,6 +23,7 @@ class LoanController extends Controller
         // Calculate summaries for each loan
         $loansData = $loans->map(function ($loan) {
             $summary = $this->amortization->calculateSummary($loan);
+
             return [
                 'id' => $loan->id,
                 'name' => $loan->name,

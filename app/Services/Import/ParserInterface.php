@@ -7,7 +7,7 @@ interface ParserInterface
     /**
      * Parse a file and return an array of ParsedTransaction objects.
      *
-     * @param string $filePath Absolute path to the uploaded file
+     * @param  string  $filePath  Absolute path to the uploaded file
      * @return ParsedTransaction[]
      */
     public function parse(string $filePath): array;

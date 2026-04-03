@@ -27,10 +27,11 @@ class ClaudeProvider implements AiProviderInterface
         ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('Claude API error: ' . $response->body());
+            throw new \RuntimeException('Claude API error: '.$response->body());
         }
 
         $data = $response->json();
+
         return $data['content'][0]['text'] ?? '';
     }
 

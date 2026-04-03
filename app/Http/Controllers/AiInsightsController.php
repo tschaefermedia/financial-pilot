@@ -17,7 +17,7 @@ class AiInsightsController extends Controller
     {
         $insights = $this->insightsService->getInsights();
 
-        if (!$insights) {
+        if (! $insights) {
             return response()->json([
                 'enabled' => false,
                 'message' => 'KI nicht konfiguriert. Gehe zu Einstellungen → KI-Konfiguration.',
@@ -37,7 +37,7 @@ class AiInsightsController extends Controller
     {
         $insights = $this->insightsService->refreshInsights();
 
-        if (!$insights) {
+        if (! $insights) {
             return response()->json([
                 'enabled' => false,
                 'message' => 'KI nicht konfiguriert.',

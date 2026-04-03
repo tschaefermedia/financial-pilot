@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Account;
 use App\Models\Category;
 use App\Models\ImportBatch;
 use App\Models\ImportMapping;
@@ -48,11 +49,12 @@ class ImportController extends Controller
         $fullPath = Storage::path($path);
 
         // Auto-detect format
-        $detector = new FormatDetector();
+        $detector = new FormatDetector;
         $parser = $detector->detect($fullPath);
         if ($parser) {
             // Known format — parse immediately
             $parsed = $parser->parse($fullPath);
+
             return $this->showPreview($parsed, $file->getClientOriginalName(), $parser->getSourceType(), $path);
         }
 
@@ -90,11 +92,11 @@ class ImportController extends Controller
 
         $fullPath = Storage::path($request->file_path);
 
-        if (!str_starts_with(realpath($fullPath) ?: '', realpath(storage_path('app/imports')) ?: '')) {
+        if (! str_starts_with(realpath($fullPath) ?: '', realpath(storage_path('app/imports')) ?: '')) {
             abort(403, 'Ungültiger Dateipfad.');
         }
 
-        if (!file_exists($fullPath)) {
+        if (! file_exists($fullPath)) {
             return redirect()->route('imports.index')->with('error', 'Datei nicht gefunden.');
         }
 
@@ -164,7 +166,7 @@ class ImportController extends Controller
                 'rule_id' => $cat?->ruleId,
                 'confidence' => $cat?->confidence ?? 0,
                 'match_type' => $cat?->matchType ?? 'none',
-                'selected' => !$isDuplicate, // Pre-select non-duplicates
+                'selected' => ! $isDuplicate, // Pre-select non-duplicates
             ];
         }
 
@@ -186,7 +188,7 @@ class ImportController extends Controller
             'duplicateCount' => count(array_filter($previewData, fn ($t) => $t['is_duplicate'])),
             'categorizedCount' => count(array_filter($previewData, fn ($t) => $t['category_id'] !== null)),
             'categories' => $categories,
-            'accounts' => \App\Models\Account::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'accounts' => Account::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
         ]);
     }
 
@@ -255,7 +257,7 @@ class ImportController extends Controller
         }
 
         return redirect()->route('imports.index')
-            ->with('success', count($request->transactions) . ' Buchungen importiert.');
+            ->with('success', count($request->transactions).' Buchungen importiert.');
     }
 
     /**
@@ -328,7 +330,7 @@ class ImportController extends Controller
             $this->ruleEngine->learn($transaction, $request->category_id);
         }
 
-        return redirect()->back()->with('success', count($transactions) . ' Buchungen kategorisiert.');
+        return redirect()->back()->with('success', count($transactions).' Buchungen kategorisiert.');
     }
 
     private function mapCategoryNode(Category $category): array

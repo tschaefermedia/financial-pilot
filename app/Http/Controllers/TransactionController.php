@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
@@ -14,10 +15,10 @@ class TransactionController extends Controller
         $query = Transaction::with(['category', 'account']);
 
         if ($request->filled('search')) {
-            $search = '%' . $request->search . '%';
+            $search = '%'.$request->search.'%';
             $query->where(function ($q) use ($search) {
                 $q->where('description', 'like', $search)
-                  ->orWhere('counterparty', 'like', $search);
+                    ->orWhere('counterparty', 'like', $search);
             });
         }
 
@@ -43,7 +44,7 @@ class TransactionController extends Controller
 
         $transactions = $query->orderByDesc('date')->orderByDesc('id')->paginate(25)->withQueryString();
 
-        $accounts = \App\Models\Account::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
+        $accounts = Account::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
 
         return Inertia::render('Transactions/Index', [
             'transactions' => $transactions,
@@ -57,7 +58,7 @@ class TransactionController extends Controller
     {
         return Inertia::render('Transactions/Form', [
             'categories' => $this->getCategoryTree(),
-            'accounts' => \App\Models\Account::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'accounts' => Account::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
         ]);
     }
 
@@ -85,7 +86,7 @@ class TransactionController extends Controller
         return Inertia::render('Transactions/Form', [
             'transaction' => $transaction->load('category'),
             'categories' => $this->getCategoryTree(),
-            'accounts' => \App\Models\Account::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'accounts' => Account::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
         ]);
     }
 

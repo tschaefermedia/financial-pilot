@@ -50,7 +50,7 @@ class CategoryRuleEngine
     /**
      * Categorize multiple transactions in bulk. Returns an array keyed by index.
      *
-     * @param array<int, array{description: string, counterparty: ?string}> $items
+     * @param  array<int, array{description: string, counterparty: ?string}>  $items
      * @return array<int, CategorizationResult>
      */
     public function categorizeBulk(array $items): array
@@ -140,7 +140,7 @@ class CategoryRuleEngine
     {
         $pattern = $this->generatePattern($transaction);
 
-        if (!$pattern) {
+        if (! $pattern) {
             return null;
         }
 
@@ -167,7 +167,9 @@ class CategoryRuleEngine
     public function confirmRule(int $ruleId): void
     {
         $rule = CategoryRule::find($ruleId);
-        if (!$rule) return;
+        if (! $rule) {
+            return;
+        }
 
         $rule->update([
             'confidence' => min(1.0, $rule->confidence + 0.05),
@@ -181,7 +183,9 @@ class CategoryRuleEngine
     public function rejectRule(int $ruleId): void
     {
         $rule = CategoryRule::find($ruleId);
-        if (!$rule) return;
+        if (! $rule) {
+            return;
+        }
 
         $newConfidence = max(0, $rule->confidence - 0.15);
 
@@ -194,12 +198,12 @@ class CategoryRuleEngine
 
     private function matchRule(CategoryRule $rule, string $description, ?string $counterparty): bool
     {
-        $searchText = mb_strtolower($description . ' ' . ($counterparty ?? ''));
+        $searchText = mb_strtolower($description.' '.($counterparty ?? ''));
         $pattern = mb_strtolower($rule->pattern);
 
         if ($rule->is_regex) {
             try {
-                return (bool) preg_match('~' . str_replace('~', '\\~', $rule->pattern) . '~iu', $searchText);
+                return (bool) preg_match('~'.str_replace('~', '\\~', $rule->pattern).'~iu', $searchText);
             } catch (\Throwable) {
                 return false;
             }
@@ -229,15 +233,15 @@ class CategoryRuleEngine
 
         // Remove common banking noise words
         $noise = ['lastschrift', 'gutschrift', 'überweisung', 'dauerauftrag', 'kartenzahlung',
-                   'ec', 'visa', 'mastercard', 'online', 'banking', 'kto', 'blz', 'iban',
-                   'end-to-end', 'ref', 'datum', 'mandat', 'glaeubiger'];
+            'ec', 'visa', 'mastercard', 'online', 'banking', 'kto', 'blz', 'iban',
+            'end-to-end', 'ref', 'datum', 'mandat', 'glaeubiger'];
         $words = preg_split('/[\s\/\-,;:.]+/', $description);
         $words = array_filter($words, function ($word) use ($noise) {
-            return mb_strlen($word) >= 3 && !in_array($word, $noise) && !is_numeric($word);
+            return mb_strlen($word) >= 3 && ! in_array($word, $noise) && ! is_numeric($word);
         });
 
         $meaningful = array_values($words);
-        if (!empty($meaningful)) {
+        if (! empty($meaningful)) {
             return $meaningful[0]; // Return first meaningful word
         }
 

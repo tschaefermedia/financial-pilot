@@ -9,8 +9,8 @@ class FormatDetector
     public function __construct()
     {
         $this->parsers = [
-            new SparkasseCamtV8Parser(),
-            new PayPalCsvParser(),
+            new SparkasseCamtV8Parser,
+            new PayPalCsvParser,
         ];
     }
 
@@ -46,6 +46,7 @@ class FormatDetector
         }
 
         arsort($delimiters);
+
         return array_key_first($delimiters);
     }
 }

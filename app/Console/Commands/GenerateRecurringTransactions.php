@@ -9,6 +9,7 @@ use Illuminate\Console\Command;
 class GenerateRecurringTransactions extends Command
 {
     protected $signature = 'recurring:generate';
+
     protected $description = 'Generate transactions from recurring templates that are due';
 
     public function handle(): int
@@ -20,6 +21,7 @@ class GenerateRecurringTransactions extends Command
 
         if ($templates->isEmpty()) {
             $this->info('Keine fälligen Daueraufträge.');
+
             return self::SUCCESS;
         }
 
@@ -34,6 +36,7 @@ class GenerateRecurringTransactions extends Command
         }
 
         $this->info("{$count} Buchung(en) aus Daueraufträgen erstellt.");
+
         return self::SUCCESS;
     }
 }

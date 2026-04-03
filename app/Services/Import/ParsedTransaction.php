@@ -16,6 +16,6 @@ class ParsedTransaction
 
     public static function computeHash(string $date, float $amount, string $reference): string
     {
-        return hash('sha256', $date . '|' . number_format($amount, 2, '.', '') . '|' . $reference);
+        return hash('sha256', $date.'|'.number_format($amount, 2, '.', '').'|'.$reference);
     }
 }

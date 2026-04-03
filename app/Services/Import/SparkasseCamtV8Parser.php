@@ -22,7 +22,7 @@ class SparkasseCamtV8Parser implements ParserInterface
         $content = file_get_contents($filePath);
 
         // Detect and convert encoding — V8 should be UTF-8 but handle ISO-8859-1 fallback
-        if (!mb_check_encoding($content, 'UTF-8')) {
+        if (! mb_check_encoding($content, 'UTF-8')) {
             $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
         }
 
@@ -57,12 +57,12 @@ class SparkasseCamtV8Parser implements ParserInterface
             $counterparty = trim($mapped['Beguenstigter/Zahlungspflichtiger'] ?? '') ?: null;
             $reference = trim($mapped['Kundenreferenz (End-to-End)'] ?? '') ?: null;
 
-            if (!$date) {
+            if (! $date) {
                 continue; // Skip rows without valid date
             }
 
             // If reference is empty or "NOTPROVIDED", use description fragment
-            if (!$reference || $reference === 'NOTPROVIDED') {
+            if (! $reference || $reference === 'NOTPROVIDED') {
                 $reference = mb_substr($description, 0, 50);
             }
 
@@ -87,7 +87,7 @@ class SparkasseCamtV8Parser implements ParserInterface
         $content = file_get_contents($filePath, false, null, 0, 2048);
 
         // Detect encoding
-        if (!mb_check_encoding($content, 'UTF-8')) {
+        if (! mb_check_encoding($content, 'UTF-8')) {
             $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
         }
 
@@ -113,12 +113,15 @@ class SparkasseCamtV8Parser implements ParserInterface
     private function parseDate(string $value): ?string
     {
         $value = trim($value);
-        if (!$value) return null;
+        if (! $value) {
+            return null;
+        }
 
         // DD.MM.YY
         if (preg_match('/^(\d{1,2})\.(\d{1,2})\.(\d{2})$/', $value, $m)) {
             $year = (int) $m[3];
             $year = $year >= 70 ? 1900 + $year : 2000 + $year;
+
             return sprintf('%04d-%02d-%02d', $year, (int) $m[2], (int) $m[1]);
         }
 
@@ -136,7 +139,9 @@ class SparkasseCamtV8Parser implements ParserInterface
     private function parseAmount(string $value): float
     {
         $value = trim($value);
-        if (!$value) return 0.0;
+        if (! $value) {
+            return 0.0;
+        }
 
         // Remove thousands separator (period), replace decimal comma with period
         $value = str_replace('.', '', $value);

@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Account;
 use App\Models\Category;
 use App\Models\RecurringTemplate;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -19,7 +21,7 @@ class RecurringTemplateController extends Controller
         return Inertia::render('Recurring/Index', [
             'templates' => $templates,
             'categories' => $this->getCategoryTree(),
-            'accounts' => \App\Models\Account::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'accounts' => Account::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
         ]);
     }
 
@@ -71,7 +73,7 @@ class RecurringTemplateController extends Controller
      */
     public function generate(RecurringTemplate $recurring)
     {
-        if (!$recurring->is_active) {
+        if (! $recurring->is_active) {
             return redirect()->back()->with('error', 'Dauerauftrag ist deaktiviert.');
         }
 
@@ -85,15 +87,15 @@ class RecurringTemplateController extends Controller
      */
     public static function generateTransaction(RecurringTemplate $template): void
     {
-        \App\Models\Transaction::create([
+        Transaction::create([
             'date' => $template->next_due_date->format('Y-m-d'),
             'amount' => $template->amount,
             'description' => $template->description,
             'counterparty' => null,
             'category_id' => $template->category_id,
             'source' => 'recurring',
-            'reference' => 'recurring-' . $template->id . '-' . $template->next_due_date->format('Y-m-d'),
-            'hash' => hash('sha256', 'recurring|' . $template->id . '|' . $template->next_due_date->format('Y-m-d')),
+            'reference' => 'recurring-'.$template->id.'-'.$template->next_due_date->format('Y-m-d'),
+            'hash' => hash('sha256', 'recurring|'.$template->id.'|'.$template->next_due_date->format('Y-m-d')),
             'notes' => 'Automatisch erstellt aus Dauerauftrag',
             'account_id' => $template->account_id,
         ]);

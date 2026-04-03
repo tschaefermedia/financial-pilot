@@ -12,8 +12,11 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class ExcelExportService
 {
     private const HEADER_COLOR = '2563EB';
+
     private const HEADER_FONT_COLOR = 'FFFFFF';
+
     private const INCOME_COLOR = '22C55E';
+
     private const EXPENSE_COLOR = 'EF4444';
 
     /**
@@ -27,13 +30,13 @@ class ExcelExportService
             ->orderBy('id')
             ->get();
 
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $spreadsheet->getProperties()
             ->setCreator('FinanzPilot')
             ->setTitle($title ?? "Export {$dateFrom} bis {$dateTo}");
 
         // Transaction detail sheet
-        $this->buildTransactionSheet($spreadsheet->getActiveSheet(), $transactions, $title ?? "Buchungen");
+        $this->buildTransactionSheet($spreadsheet->getActiveSheet(), $transactions, $title ?? 'Buchungen');
 
         // Summary sheet
         $summarySheet = $spreadsheet->createSheet();
@@ -42,10 +45,10 @@ class ExcelExportService
         $spreadsheet->setActiveSheetIndex(0);
 
         // Write to temp file
-        $filename = 'finanzpilot-export-' . date('Y-m-d-His') . '.xlsx';
-        $path = storage_path('app/exports/' . $filename);
+        $filename = 'finanzpilot-export-'.date('Y-m-d-His').'.xlsx';
+        $path = storage_path('app/exports/'.$filename);
 
-        if (!is_dir(dirname($path))) {
+        if (! is_dir(dirname($path))) {
             mkdir(dirname($path), 0755, true);
         }
 
@@ -60,14 +63,14 @@ class ExcelExportService
      */
     public function exportBatch(array $months): string
     {
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $spreadsheet->getProperties()
             ->setCreator('FinanzPilot')
             ->setTitle('FinanzPilot Batch-Export');
 
         $first = true;
         foreach ($months as $month) {
-            $dateFrom = $month . '-01';
+            $dateFrom = $month.'-01';
             $dateTo = date('Y-m-t', strtotime($dateFrom));
 
             $transactions = Transaction::with('category')
@@ -89,8 +92,8 @@ class ExcelExportService
         }
 
         // Add a combined summary sheet
-        $allMonthsFrom = min($months) . '-01';
-        $allMonthsTo = date('Y-m-t', strtotime(max($months) . '-01'));
+        $allMonthsFrom = min($months).'-01';
+        $allMonthsTo = date('Y-m-t', strtotime(max($months).'-01'));
         $allTransactions = Transaction::with('category')
             ->whereBetween('date', [$allMonthsFrom, $allMonthsTo])
             ->orderBy('date')
@@ -101,10 +104,10 @@ class ExcelExportService
 
         $spreadsheet->setActiveSheetIndex(0);
 
-        $filename = 'finanzpilot-batch-' . date('Y-m-d-His') . '.xlsx';
-        $path = storage_path('app/exports/' . $filename);
+        $filename = 'finanzpilot-batch-'.date('Y-m-d-His').'.xlsx';
+        $path = storage_path('app/exports/'.$filename);
 
-        if (!is_dir(dirname($path))) {
+        if (! is_dir(dirname($path))) {
             mkdir(dirname($path), 0755, true);
         }
 
@@ -123,7 +126,7 @@ class ExcelExportService
         $columns = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
         foreach ($headers as $i => $header) {
-            $cell = $columns[$i] . '1';
+            $cell = $columns[$i].'1';
             $sheet->setCellValue($cell, $header);
         }
 
@@ -148,6 +151,7 @@ class ExcelExportService
             $sheet->setCellValue('A2', 'Keine Buchungen in diesem Zeitraum.');
             $sheet->mergeCells('A2:G2');
             $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+
             return;
         }
 
@@ -205,7 +209,7 @@ class ExcelExportService
         // Title
         $sheet->setCellValue('A1', 'Zusammenfassung');
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
-        $sheet->setCellValue('A2', "Zeitraum: " . date('d.m.Y', strtotime($dateFrom)) . ' bis ' . date('d.m.Y', strtotime($dateTo)));
+        $sheet->setCellValue('A2', 'Zeitraum: '.date('d.m.Y', strtotime($dateFrom)).' bis '.date('d.m.Y', strtotime($dateTo)));
         $sheet->getStyle('A2')->getFont()->setItalic(true);
 
         // Overall totals
@@ -218,7 +222,7 @@ class ExcelExportService
             ['Einnahmen', $income],
             ['Ausgaben', abs($expenses)],
             ['Differenz', $balance],
-            ['Sparquote', $income > 0 ? round(($balance / $income) * 100, 1) . ' %' : '0 %'],
+            ['Sparquote', $income > 0 ? round(($balance / $income) * 100, 1).' %' : '0 %'],
             ['Anzahl Buchungen', $transactions->count()],
         ];
 
@@ -262,7 +266,7 @@ class ExcelExportService
             $sheet->getStyle("B{$row}")->getNumberFormat()
                 ->setFormatCode('#.##0,00 €');
             $percent = $totalExpenses > 0 ? round(($total / $totalExpenses) * 100, 1) : 0;
-            $sheet->setCellValue("C{$row}", $percent . ' %');
+            $sheet->setCellValue("C{$row}", $percent.' %');
             $row++;
         }
 
@@ -281,6 +285,7 @@ class ExcelExportService
         ];
         $m = (int) date('n', strtotime($date));
         $y = date('Y', strtotime($date));
-        return ($months[$m] ?? '') . ' ' . $y;
+
+        return ($months[$m] ?? '').' '.$y;
     }
 }

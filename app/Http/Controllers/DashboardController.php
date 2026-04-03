@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Account;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -33,6 +34,7 @@ class DashboardController extends Controller
         $runningBalance = 0;
         $balanceData = $monthlyData->map(function ($month) use (&$runningBalance) {
             $runningBalance += $month->income - $month->expenses;
+
             return [
                 'month' => $month->month,
                 'balance' => round($runningBalance, 2),
@@ -46,7 +48,7 @@ class DashboardController extends Controller
         $savingsRate = $income > 0 ? round(($balance / $income) * 100, 1) : 0;
 
         // Account balances
-        $accounts = \App\Models\Account::where('is_active', true)
+        $accounts = Account::where('is_active', true)
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get()

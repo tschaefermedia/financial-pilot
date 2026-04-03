@@ -3,6 +3,9 @@
 namespace App\Services;
 
 use App\Models\Loan;
+use App\Models\LoanPayment;
+use App\Models\Transaction;
+use Illuminate\Support\Facades\DB;
 
 class AmortizationService
 {
@@ -12,7 +15,7 @@ class AmortizationService
      */
     public function calculateSchedule(Loan $loan): array
     {
-        if ($loan->type !== 'bank' || !$loan->term_months || $loan->term_months <= 0) {
+        if ($loan->type !== 'bank' || ! $loan->term_months || $loan->term_months <= 0) {
             return [];
         }
 
@@ -69,6 +72,7 @@ class AmortizationService
         if (empty($schedule)) {
             // Informal loan — simple summary
             $totalPaid = $loan->payments->sum('amount');
+
             return [
                 'totalPayments' => round($totalPaid, 2),
                 'remainingBalance' => round((float) $loan->principal - $totalPaid, 2),
@@ -114,7 +118,7 @@ class AmortizationService
      */
     public function autoMatchPayments(Loan $loan): int
     {
-        if (!$loan->payment_day) {
+        if (! $loan->payment_day) {
             return 0;
         }
 
@@ -127,8 +131,8 @@ class AmortizationService
         $matched = 0;
 
         // Find unmatched transactions near the payment amount
-        $transactions = \App\Models\Transaction::where('amount', '<', 0)
-            ->whereBetween(\Illuminate\Support\Facades\DB::raw('ABS(amount)'), [$monthlyAmount * 0.95, $monthlyAmount * 1.05])
+        $transactions = Transaction::where('amount', '<', 0)
+            ->whereBetween(DB::raw('ABS(amount)'), [$monthlyAmount * 0.95, $monthlyAmount * 1.05])
             ->whereDoesntHave('loanPayment')
             ->where('date', '>=', $loan->start_date)
             ->get();
@@ -143,8 +147,8 @@ class AmortizationService
                     ->whereMonth('date', $transaction->date->month)
                     ->exists();
 
-                if (!$existingPayment) {
-                    \App\Models\LoanPayment::create([
+                if (! $existingPayment) {
+                    LoanPayment::create([
                         'loan_id' => $loan->id,
                         'transaction_id' => $transaction->id,
                         'date' => $transaction->date,

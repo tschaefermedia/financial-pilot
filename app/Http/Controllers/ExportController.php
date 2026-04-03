@@ -39,7 +39,7 @@ class ExportController extends Controller
             'month' => 'required|string|date_format:Y-m',
         ]);
 
-        $dateFrom = $request->month . '-01';
+        $dateFrom = $request->month.'-01';
         $dateTo = date('Y-m-t', strtotime($dateFrom));
 
         $months = [
@@ -49,7 +49,7 @@ class ExportController extends Controller
         ];
         $m = (int) date('n', strtotime($dateFrom));
         $y = date('Y', strtotime($dateFrom));
-        $title = $months[$m] . ' ' . $y;
+        $title = $months[$m].' '.$y;
 
         $path = $this->exportService->exportRange($dateFrom, $dateTo, $title);
 

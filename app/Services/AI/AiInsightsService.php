@@ -2,6 +2,7 @@
 
 namespace App\Services\AI;
 
+use App\Models\Setting;
 use Illuminate\Support\Facades\Cache;
 
 class AiInsightsService
@@ -22,7 +23,7 @@ PROMPT;
     public function getInsights(): ?array
     {
         $provider = $this->resolveProvider();
-        if (!$provider) {
+        if (! $provider) {
             return null;
         }
 
@@ -33,7 +34,7 @@ PROMPT;
         }
 
         // Check cache
-        $cacheKey = 'ai_insights_' . $snapshot->hash;
+        $cacheKey = 'ai_insights_'.$snapshot->hash;
         $cached = Cache::get($cacheKey);
         if ($cached) {
             return $cached;
@@ -59,7 +60,7 @@ PROMPT;
         } catch (\Throwable $e) {
             return [
                 'insights' => null,
-                'error' => 'KI-Analyse fehlgeschlagen: ' . $e->getMessage(),
+                'error' => 'KI-Analyse fehlgeschlagen: '.$e->getMessage(),
                 'provider' => $provider->getName(),
             ];
         }
@@ -71,27 +72,28 @@ PROMPT;
     public function refreshInsights(): ?array
     {
         $snapshot = FinancialSnapshot::capture();
-        Cache::forget('ai_insights_' . $snapshot->hash);
+        Cache::forget('ai_insights_'.$snapshot->hash);
+
         return $this->getInsights();
     }
 
     private function resolveProvider(): ?AiProviderInterface
     {
-        $providerType = \App\Models\Setting::get('ai_provider', 'none');
+        $providerType = Setting::get('ai_provider', 'none');
 
         return match ($providerType) {
             'claude' => new ClaudeProvider(
-                apiKey: \App\Models\Setting::get('ai_api_key', ''),
-                model: \App\Models\Setting::get('ai_model', 'claude-sonnet-4-5-20250514'),
+                apiKey: Setting::get('ai_api_key', ''),
+                model: Setting::get('ai_model', 'claude-sonnet-4-5-20250514'),
             ),
             'openai' => new OpenAiCompatibleProvider(
-                baseUrl: \App\Models\Setting::get('ai_base_url', 'https://api.openai.com'),
-                model: \App\Models\Setting::get('ai_model', 'gpt-4o'),
-                apiKey: \App\Models\Setting::get('ai_api_key'),
+                baseUrl: Setting::get('ai_base_url', 'https://api.openai.com'),
+                model: Setting::get('ai_model', 'gpt-4o'),
+                apiKey: Setting::get('ai_api_key'),
             ),
             'ollama' => new OpenAiCompatibleProvider(
-                baseUrl: \App\Models\Setting::get('ai_base_url', 'http://localhost:11434'),
-                model: \App\Models\Setting::get('ai_model', 'llama3'),
+                baseUrl: Setting::get('ai_base_url', 'http://localhost:11434'),
+                model: Setting::get('ai_model', 'llama3'),
                 apiKey: null,
             ),
             default => null,

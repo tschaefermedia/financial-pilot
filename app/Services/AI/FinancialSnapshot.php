@@ -42,6 +42,7 @@ class FinancialSnapshot
         $monthlyRatios = $monthly->map(function ($m) {
             $income = (float) $m->income;
             $expenses = (float) $m->expenses;
+
             return [
                 'month' => $m->month,
                 'income' => 100,
@@ -95,8 +96,12 @@ class FinancialSnapshot
             $currentTotal = (float) $cat->total;
             if ($prevTotal > 0) {
                 $change = round((($currentTotal - $prevTotal) / $prevTotal) * 100, 1);
-                if ($change > 10) $growing[] = ['category' => $cat->name, 'change' => $change];
-                if ($change < -10) $shrinking[] = ['category' => $cat->name, 'change' => $change];
+                if ($change > 10) {
+                    $growing[] = ['category' => $cat->name, 'change' => $change];
+                }
+                if ($change < -10) {
+                    $shrinking[] = ['category' => $cat->name, 'change' => $change];
+                }
             }
         }
 
@@ -121,7 +126,7 @@ class FinancialSnapshot
     {
         $lines = ["Finanzdaten (anonymisiert, Einkommen = 100 Einheiten):\n"];
 
-        $lines[] = "Monatliche Übersicht (letzte 6 Monate):";
+        $lines[] = 'Monatliche Übersicht (letzte 6 Monate):';
         foreach ($this->monthlyRatios as $m) {
             $lines[] = "  {$m['month']}: Einnahmen=100, Ausgaben={$m['expenses']}%, Sparquote={$m['savings']}%";
         }
@@ -132,16 +137,16 @@ class FinancialSnapshot
         }
 
         $lines[] = "\nAktuelle Sparquote: {$this->savingsRate}%";
-        $lines[] = "Trend zum Vormonat: " . ($this->savingsRateTrend >= 0 ? '+' : '') . "{$this->savingsRateTrend}%";
+        $lines[] = 'Trend zum Vormonat: '.($this->savingsRateTrend >= 0 ? '+' : '')."{$this->savingsRateTrend}%";
 
-        if (!empty($this->topGrowingCategories)) {
+        if (! empty($this->topGrowingCategories)) {
             $lines[] = "\nStark gestiegene Kategorien:";
             foreach ($this->topGrowingCategories as $c) {
                 $lines[] = "  {$c['category']}: +{$c['change']}%";
             }
         }
 
-        if (!empty($this->topShrinkingCategories)) {
+        if (! empty($this->topShrinkingCategories)) {
             $lines[] = "\nStark gesunkene Kategorien:";
             foreach ($this->topShrinkingCategories as $c) {
                 $lines[] = "  {$c['category']}: {$c['change']}%";

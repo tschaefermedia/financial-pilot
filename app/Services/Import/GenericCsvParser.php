@@ -35,7 +35,7 @@ class GenericCsvParser implements ParserInterface
         $content = file_get_contents($filePath);
 
         // Handle encoding
-        if ($this->encoding !== 'UTF-8' && !mb_check_encoding($content, 'UTF-8')) {
+        if ($this->encoding !== 'UTF-8' && ! mb_check_encoding($content, 'UTF-8')) {
             $content = mb_convert_encoding($content, 'UTF-8', $this->encoding);
         }
 
@@ -57,7 +57,7 @@ class GenericCsvParser implements ParserInterface
             $amount = $this->extractAmount($row);
             $description = $this->extractField($row, 'description') ?? '';
 
-            if (!$date || $amount === null) {
+            if (! $date || $amount === null) {
                 continue;
             }
 
@@ -83,7 +83,7 @@ class GenericCsvParser implements ParserInterface
     public function canHandle(string $filePath): bool
     {
         // Generic parser can handle anything if column mapping is provided
-        return !empty($this->columnMapping);
+        return ! empty($this->columnMapping);
     }
 
     public function getSourceType(): string
@@ -94,17 +94,20 @@ class GenericCsvParser implements ParserInterface
     private function extractField(array $row, string $field): ?string
     {
         $index = $this->columnMapping[$field] ?? null;
-        if ($index === null || !isset($row[$index])) {
+        if ($index === null || ! isset($row[$index])) {
             return null;
         }
         $value = trim($row[$index]);
+
         return $value !== '' ? $value : null;
     }
 
     private function extractDate(array $row): ?string
     {
         $raw = $this->extractField($row, 'date');
-        if (!$raw) return null;
+        if (! $raw) {
+            return null;
+        }
 
         // Try common German format first (DD.MM.YYYY)
         if (preg_match('/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/', $raw, $m)) {
@@ -115,6 +118,7 @@ class GenericCsvParser implements ParserInterface
         if (preg_match('/^(\d{1,2})\.(\d{1,2})\.(\d{2})$/', $raw, $m)) {
             $year = (int) $m[3];
             $year = $year >= 70 ? 1900 + $year : 2000 + $year;
+
             return sprintf('%04d-%02d-%02d', $year, (int) $m[2], (int) $m[1]);
         }
 
@@ -135,7 +139,9 @@ class GenericCsvParser implements ParserInterface
     private function extractAmount(array $row): ?float
     {
         $raw = $this->extractField($row, 'amount');
-        if ($raw === null) return null;
+        if ($raw === null) {
+            return null;
+        }
 
         // German format: remove thousands dots, replace comma with period
         $value = str_replace('.', '', $raw);
@@ -155,7 +161,7 @@ class GenericCsvParser implements ParserInterface
         $content = file_get_contents($filePath);
         $content = preg_replace('/^\xEF\xBB\xBF/', '', $content);
 
-        if (!mb_check_encoding($content, 'UTF-8')) {
+        if (! mb_check_encoding($content, 'UTF-8')) {
             $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
         }
 

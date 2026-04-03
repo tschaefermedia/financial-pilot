@@ -3,49 +3,151 @@
 ## Prerequisites
 
 - Docker & Docker Compose installed on the host (Proxmox LXC, VM, or bare metal)
-- Git access to the repository
 - (Optional) Cloudflare Tunnel or reverse proxy for HTTPS
 
 ---
 
-## Quick Start
+## Option A: Deploy with Pre-built Image (Recommended)
+
+The fastest way to deploy. Uses the pre-built image from GitHub Container Registry — no build step needed.
+
+### 1. Create a project directory
 
 ```bash
-# 1. Clone the repository
-git clone git@github.com:tschaefermedia/financial-pilot.git
-cd financial-pilot
+mkdir finanzpilot && cd finanzpilot
+```
 
-# 2. Configure environment
-cp .env.example .env
+### 2. Create docker-compose.yml
 
-# 3. Edit .env — see "Environment Configuration" below
-nano .env
+```yaml
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - app-data:/var/www/html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
 
-# 4. Build and start containers (frontend assets are built automatically via multi-stage Docker build)
-docker compose build
+  php:
+    image: ghcr.io/tschaefermedia/financial-pilot:latest
+    volumes:
+      - app-data:/var/www/html
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+
+volumes:
+  app-data:
+```
+
+### 3. Create nginx.conf
+
+```nginx
+server {
+    listen 80;
+    server_name localhost;
+    root /var/www/html/public;
+    index index.php;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass php:9000;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+}
+```
+
+### 4. Create .env
+
+```env
+APP_NAME=FinanzPilot
+APP_ENV=production
+APP_KEY=
+APP_DEBUG=false
+APP_URL=http://localhost
+
+DB_CONNECTION=sqlite
+SESSION_DRIVER=file
+CACHE_STORE=file
+QUEUE_CONNECTION=sync
+```
+
+### 5. Start and initialize
+
+```bash
 docker compose up -d
 
-# 5. Install PHP dependencies
+# Copy .env into the container volume
+docker compose cp .env php:/var/www/html/.env
+
+# Install dependencies and initialize
 docker compose exec php composer install --no-dev --optimize-autoloader
-
-# 6. Generate application key
 docker compose exec php php artisan key:generate
-
-# 7. Run database migrations and seed categories
 docker compose exec php php artisan migrate --force
 docker compose exec php php artisan db:seed --force
-
-# 8. Set permissions
-docker compose exec php chown -R www-data:www-data storage bootstrap/cache database
 ```
 
 The app is now running at `http://<your-server-ip>`.
 
+### Updating to a new version
+
+```bash
+docker compose pull
+docker compose up -d
+docker compose exec php php artisan migrate --force
+```
+
+---
+
+## Option B: Build from Source
+
+Clone the repo and build the Docker image locally.
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/tschaefermedia/financial-pilot.git
+cd financial-pilot
+
+# 2. Configure environment
+cp .env.example .env
+nano .env  # See "Environment Configuration" below
+
+# 3. Build and start (frontend assets are built automatically via multi-stage Docker build)
+docker compose build
+docker compose up -d
+
+# 4. Install PHP dependencies
+docker compose exec php composer install --no-dev --optimize-autoloader
+
+# 5. Generate application key
+docker compose exec php php artisan key:generate
+
+# 6. Run database migrations and seed categories
+docker compose exec php php artisan migrate --force
+docker compose exec php php artisan db:seed --force
+```
+
+### Updating from source
+
+```bash
+git pull
+docker compose build
+docker compose up -d
+docker compose exec php composer install --no-dev --optimize-autoloader
+docker compose exec php php artisan migrate --force
+```
+
 ---
 
 ## Environment Configuration
-
-Edit `.env` with these production values:
 
 ```env
 APP_NAME=FinanzPilot
@@ -53,20 +155,13 @@ APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://finanzpilot.yourdomain.com
 
-# Database — SQLite, no changes needed
 DB_CONNECTION=sqlite
-
-# Session & Cache — use file driver (no external services)
 SESSION_DRIVER=file
 CACHE_STORE=file
 QUEUE_CONNECTION=sync
-
-# AI Configuration (optional)
-AI_PROVIDER=none          # none, claude, openai, ollama
-AI_API_KEY=               # API key for claude/openai
-AI_MODEL=                 # e.g., claude-sonnet-4-5-20250514, gpt-4o, llama3
-AI_BASE_URL=              # Required for openai/ollama (e.g., http://192.168.1.100:11434)
 ```
+
+AI is configured through the Settings page in the app (stored in the database, not .env).
 
 ---
 
@@ -79,9 +174,8 @@ AI_BASE_URL=              # Required for openai/ollama (e.g., http://192.168.1.1
 │  ┌───────────┐  ┌──────────────┐  │
 │  │   nginx   │  │     php      │  │
 │  │  :80      │→ │    :9000     │  │
-│  │  (proxy)  │  │ (fpm + assets│  │
-│  └───────────┘  │  via multi-  │  │
-│                  │  stage build)│  │
+│  │  (proxy)  │  │  (fpm +      │  │
+│  └───────────┘  │  built assets)│  │
 │                  └──────────────┘  │
 │                        │           │
 │              database/database.sqlite │
@@ -91,22 +185,24 @@ AI_BASE_URL=              # Required for openai/ollama (e.g., http://192.168.1.1
 | Service | Image | Purpose |
 |---------|-------|---------|
 | nginx | nginx:alpine | Reverse proxy, serves static files |
-| php | php:8.4-fpm (multi-stage) | Laravel app server; frontend assets built during Docker image build via Node.js stage |
+| php | ghcr.io/tschaefermedia/financial-pilot | Laravel app + pre-built frontend assets |
 
 ---
 
 ## Make Commands
 
+When using Option B (build from source):
+
 ```bash
 make up          # Start all containers
 make down        # Stop all containers
 make build       # Rebuild containers
+make rebuild     # Rebuild containers without cache
 make shell       # Open a bash shell in the PHP container
 make migrate     # Run database migrations
 make seed        # Run database seeders
 make fresh       # Drop all tables, re-migrate, and re-seed
 make tinker      # Open Laravel Tinker REPL
-make rebuild      # Rebuild containers without cache
 ```
 
 ---
@@ -118,11 +214,12 @@ FinanzPilot uses a single SQLite file. Backup is a file copy.
 ### Backup
 
 ```bash
-# Copy the database file
-cp database/database.sqlite /path/to/backup/finanzpilot-$(date +%Y%m%d).sqlite
+# Option A (pre-built image)
+docker compose exec php cp database/database.sqlite /var/www/html/storage/app/backup.sqlite
+docker compose cp php:/var/www/html/storage/app/backup.sqlite ./finanzpilot-backup.sqlite
 
-# Or from outside the container
-docker compose exec php cp database/database.sqlite /var/www/html/storage/app/backup-$(date +%Y%m%d).sqlite
+# Option B (from source)
+cp database/database.sqlite /path/to/backup/finanzpilot-$(date +%Y%m%d).sqlite
 ```
 
 ### Restore
@@ -131,19 +228,21 @@ docker compose exec php cp database/database.sqlite /var/www/html/storage/app/ba
 # Stop the app
 docker compose down
 
-# Replace the database
-cp /path/to/backup/finanzpilot-20260403.sqlite database/database.sqlite
+# Option A: copy backup into volume
+docker compose up -d
+docker compose cp finanzpilot-backup.sqlite php:/var/www/html/database/database.sqlite
+docker compose exec php chown www-data:www-data database/database.sqlite
+docker compose restart
 
-# Restart
+# Option B: direct file replacement
+cp /path/to/backup/finanzpilot-20260403.sqlite database/database.sqlite
 docker compose up -d
 ```
 
 ### Automated Backup (Cron)
 
-Add to the host's crontab (`crontab -e`):
-
 ```cron
-# Daily backup at 2 AM
+# Daily backup at 2 AM (Option B)
 0 2 * * * cp /path/to/financial-pilot/database/database.sqlite /path/to/backups/finanzpilot-$(date +\%Y\%m\%d).sqlite
 
 # Keep only last 30 days
@@ -165,7 +264,7 @@ npm install
 
 ### Configure in Claude Code
 
-Add to your Claude Code MCP settings (`~/.claude/claude_desktop_config.json` or project `.mcp.json`):
+The project includes a `.mcp.json` file. If using from a different location, add to your Claude Code MCP settings:
 
 ```json
 {
@@ -177,8 +276,6 @@ Add to your Claude Code MCP settings (`~/.claude/claude_desktop_config.json` or 
   }
 }
 ```
-
-The MCP server communicates over stdio and accesses the SQLite database directly at `../database/database.sqlite` relative to the `mcp-server/` directory.
 
 ### Available MCP Resources
 
@@ -214,32 +311,6 @@ This runs `recurring:generate` daily, creating transactions for all active templ
 
 ---
 
-## Updating
-
-```bash
-cd /path/to/financial-pilot
-
-# Pull latest code
-git pull
-
-# Rebuild containers (if Dockerfiles changed)
-docker compose build
-
-# Rebuild (frontend assets are built automatically in the multi-stage Docker build)
-docker compose build
-
-# Install/update PHP dependencies
-docker compose exec php composer install --no-dev --optimize-autoloader
-
-# Run new migrations
-docker compose exec php php artisan migrate --force
-
-# Restart
-docker compose up -d
-```
-
----
-
 ## Troubleshooting
 
 ### App shows blank page
@@ -247,30 +318,29 @@ docker compose up -d
 # Check Laravel logs
 docker compose exec php tail -50 storage/logs/laravel.log
 
-# Ensure storage permissions
+# Ensure storage permissions (handled automatically by entrypoint, but just in case)
 docker compose exec php chown -R www-data:www-data storage bootstrap/cache
 ```
 
 ### Database locked errors
-The SQLite config uses WAL mode with a 5-second busy timeout. If you see lock errors:
 ```bash
-# Check for stuck processes
+# Verify WAL mode is active
 docker compose exec php php artisan tinker --execute="DB::select('PRAGMA journal_mode')"
 # Should return: wal
 ```
 
 ### Assets not loading
 ```bash
-# Rebuild frontend
-docker compose exec node npm run build
+# Verify manifest exists
+docker compose exec php ls -la public/build/manifest.json
 
-# Check the manifest exists
-ls public/build/manifest.json
+# If missing, restart the PHP container (entrypoint copies assets)
+docker compose restart php
 ```
 
 ### Port conflict
-If port 80 is already in use, change the nginx port mapping in `docker-compose.yml`:
+Change the nginx port in `docker-compose.yml`:
 ```yaml
 ports:
-  - "8080:80"  # Change 80 to any available port
+  - "8080:80"
 ```

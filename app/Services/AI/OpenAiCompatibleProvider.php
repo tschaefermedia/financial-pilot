@@ -16,10 +16,10 @@ class OpenAiCompatibleProvider implements AiProviderInterface
     {
         $headers = ['content-type' => 'application/json'];
         if ($this->apiKey) {
-            $headers['Authorization'] = 'Bearer ' . $this->apiKey;
+            $headers['Authorization'] = 'Bearer '.$this->apiKey;
         }
 
-        $url = rtrim($this->baseUrl, '/') . '/v1/chat/completions';
+        $url = rtrim($this->baseUrl, '/').'/v1/chat/completions';
 
         $response = Http::withHeaders($headers)->timeout(60)->post($url, [
             'model' => $this->model,
@@ -31,15 +31,16 @@ class OpenAiCompatibleProvider implements AiProviderInterface
         ]);
 
         if ($response->failed()) {
-            throw new \RuntimeException('AI API error: ' . $response->body());
+            throw new \RuntimeException('AI API error: '.$response->body());
         }
 
         $data = $response->json();
+
         return $data['choices'][0]['message']['content'] ?? '';
     }
 
     public function getName(): string
     {
-        return 'OpenAI-Compatible (' . $this->model . ')';
+        return 'OpenAI-Compatible ('.$this->model.')';
     }
 }

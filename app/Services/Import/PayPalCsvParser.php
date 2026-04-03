@@ -12,7 +12,7 @@ class PayPalCsvParser implements ParserInterface
         $content = preg_replace('/^\xEF\xBB\xBF/', '', $content);
 
         // Ensure UTF-8
-        if (!mb_check_encoding($content, 'UTF-8')) {
+        if (! mb_check_encoding($content, 'UTF-8')) {
             $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
         }
 
@@ -60,7 +60,7 @@ class PayPalCsvParser implements ParserInterface
             $date = $this->parseDate(trim($row[$dateCol] ?? ''));
             $amount = $this->parseAmount(trim($row[$grossCol] ?? ''));
 
-            if (!$date || $amount === null) {
+            if (! $date || $amount === null) {
                 continue;
             }
 
@@ -69,13 +69,13 @@ class PayPalCsvParser implements ParserInterface
             $reference = $refCol !== null ? trim($row[$refCol] ?? '') : null;
 
             // Use description or type as description, name as counterparty
-            if (!$description && $name) {
-                $description = 'PayPal: ' . $name;
-            } elseif (!$description) {
+            if (! $description && $name) {
+                $description = 'PayPal: '.$name;
+            } elseif (! $description) {
                 $description = 'PayPal-Transaktion';
             }
 
-            if (!$reference) {
+            if (! $reference) {
                 $reference = mb_substr($description, 0, 50);
             }
 
@@ -100,7 +100,7 @@ class PayPalCsvParser implements ParserInterface
         $content = file_get_contents($filePath, false, null, 0, 4096);
         $content = preg_replace('/^\xEF\xBB\xBF/', '', $content);
 
-        if (!mb_check_encoding($content, 'UTF-8')) {
+        if (! mb_check_encoding($content, 'UTF-8')) {
             $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
         }
 
@@ -124,12 +124,15 @@ class PayPalCsvParser implements ParserInterface
                 return $index;
             }
         }
+
         return null;
     }
 
     private function parseDate(string $value): ?string
     {
-        if (!$value) return null;
+        if (! $value) {
+            return null;
+        }
 
         // DD.MM.YYYY (German)
         if (preg_match('/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/', $value, $m)) {
@@ -151,7 +154,9 @@ class PayPalCsvParser implements ParserInterface
 
     private function parseAmount(string $value): ?float
     {
-        if (!$value) return null;
+        if (! $value) {
+            return null;
+        }
 
         // Handle both German (1.234,56) and English (1,234.56) formats
         // If it contains comma followed by exactly 2 digits at end, it's German format
