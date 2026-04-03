@@ -21,7 +21,8 @@ services:
 
   node:
     build:
-      context: ./docker/node
+      context: .
+      dockerfile: docker/node/Dockerfile
     ports:
       - "5173:5173"
     volumes:
