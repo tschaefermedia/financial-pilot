@@ -11,7 +11,7 @@ RUN npm run build
 FROM composer:latest AS vendor
 WORKDIR /app
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --ignore-platform-reqs
 COPY . .
 RUN composer dump-autoload --optimize
 
