@@ -149,10 +149,34 @@ All variables can be set via Docker Compose `environment:`, a bind-mounted `.env
 | ------------ | ------------------ | ------------------------------------------------------- |
 | `APP_NAME`   | `FinanzPilot`      | Application name (shown in browser tab)                 |
 | `APP_ENV`    | `production`       | Environment: `production` or `local`                    |
-| `APP_KEY`    | *(auto-generated)* | Encryption key — generated automatically on first start |
+| `APP_KEY`    | *(auto-generated)* | Encryption key — see below |
 | `APP_DEBUG`  | `false`            | Set `true` for detailed error pages (development only)  |
 | `APP_URL`    | `http://localhost` | Public URL (used in exports, links)                     |
 | `APP_LOCALE` | `de`               | Application locale                                      |
+
+#### APP_KEY
+
+The app key is used for encryption (sessions, cookies). It is auto-generated on first container start. You can also set it explicitly in your `docker-compose.yml`:
+
+```yaml
+environment:
+  - APP_KEY=base64:your-key-here
+```
+
+To generate a key manually:
+
+```bash
+# Using PHP
+php -r "echo 'base64:'.base64_encode(random_bytes(32)).PHP_EOL;"
+
+# Using OpenSSL
+echo "base64:$(openssl rand -base64 32)"
+
+# From a running container
+docker compose exec php php artisan key:generate --show
+```
+
+Copy the output (e.g., `base64:RXxCXlba...`) and add it to `environment:` in your `docker-compose.yml`. Recommended for production — ensures the key persists across container recreations.
 
 ### Database
 
