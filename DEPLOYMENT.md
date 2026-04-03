@@ -32,7 +32,7 @@ services:
       - php
 
   php:
-    image: ghcr.io/tschaefermedia/financial-pilot:latest
+    image: ghcr.io/tschaefermedia/FinanzPilot:latest
     volumes:
       - app-data:/var/www/html
       - ./.env:/var/www/html/.env
@@ -108,7 +108,7 @@ Clone the repo and build the Docker image locally.
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/tschaefermedia/financial-pilot.git
+git clone https://github.com/tschaefermedia/FinanzPilot.git
 cd financial-pilot
 
 # 2. Configure environment
@@ -180,7 +180,7 @@ AI is configured through the Settings page in the app (stored in the database, n
 | Service | Image | Purpose |
 |---------|-------|---------|
 | nginx | nginx:alpine | Reverse proxy, serves static files |
-| php | ghcr.io/tschaefermedia/financial-pilot | Laravel app + pre-built frontend assets |
+| php | ghcr.io/tschaefermedia/FinanzPilot | Laravel app + pre-built frontend assets |
 
 ---
 

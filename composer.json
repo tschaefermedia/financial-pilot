@@ -1,6 +1,6 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "tschaefermedia/financial-pilot",
+    "name": "tschaefermedia/finanzpilot",
     "type": "project",
     "version": "1.0.0",
     "homepage": "https://github.com/tschaefermedia/financial-pilot",

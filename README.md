@@ -25,7 +25,7 @@ Self-hosted personal finance web application. Track income, expenses, bank impor
 ## Quick Start
 
 ```bash
-git clone https://github.com/tschaefermedia/financial-pilot.git
+git clone https://github.com/tschaefermedia/FinanzPilot.git
 cd financial-pilot
 cp .env.example .env
 docker compose build
