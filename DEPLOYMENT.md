@@ -97,8 +97,9 @@ docker compose exec php php artisan db:seed --force
 ```bash
 docker compose pull
 docker compose up -d
-docker compose exec php php artisan migrate --force
 ```
+
+Migrations run automatically on container start — no manual steps needed.
 
 ---
 
