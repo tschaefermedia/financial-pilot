@@ -16,11 +16,11 @@ if [ ! -f /var/www/html/.env ]; then
     cp /var/www/html/.env.example /var/www/html/.env
 fi
 
-# Generate app key if not set (without artisan to avoid bootstrap issues)
+# Generate app key if not set
 if grep -q "^APP_KEY=" /var/www/html/.env && ! grep -q "^APP_KEY=base64:" /var/www/html/.env; then
-    KEY=$(head -c 32 /dev/urandom | base64 | tr -d '/+=' | head -c 32)
-    sed -i "s|^APP_KEY=.*|APP_KEY=base64:$(echo -n "$KEY" | base64)|" /var/www/html/.env
-    echo "Application key generated."
+    KEY=$(php -r "echo 'base64:'.base64_encode(random_bytes(32));")
+    sed -i "s|^APP_KEY=.*|APP_KEY=${KEY}|" /var/www/html/.env
+    echo "Application key generated: ${KEY}"
 fi
 
 # Apply environment variable overrides to .env
