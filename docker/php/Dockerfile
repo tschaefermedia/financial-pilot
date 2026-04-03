@@ -7,7 +7,15 @@ COPY vite.config.js ./
 COPY resources/ ./resources/
 RUN npm run build
 
-# Stage 2: PHP application
+# Stage 2: Install PHP dependencies
+FROM composer:latest AS vendor
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+COPY . .
+RUN composer dump-autoload --optimize
+
+# Stage 3: PHP application
 FROM php:8.4-fpm
 
 RUN apt-get update && apt-get install -y \
@@ -16,16 +24,22 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo_sqlite mbstring intl zip gd bcmath \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
 WORKDIR /var/www/html
 
-# Store built assets in a safe location (volume mount overwrites /var/www/html)
-COPY --from=frontend /app/public/build/ /opt/build-assets/
+# Copy application code
+COPY --from=vendor /app /var/www/html
 
-# Entrypoint: copy built assets into the volume-mounted public dir, then start php-fpm
+# Copy built frontend assets
+COPY --from=frontend /app/public/build/ /var/www/html/public/build/
+
+# Store a copy of the app for the entrypoint to sync into volumes
+RUN cp -r /var/www/html /opt/app-source
+
+# Entrypoint
 COPY docker/php/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
+
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["php-fpm"]
