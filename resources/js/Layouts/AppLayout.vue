@@ -1,12 +1,28 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { useTheme } from '@/Composables/useTheme.js';
+import { useToast } from 'primevue/usetoast';
+import Toast from 'primevue/toast';
+import ConfirmDialog from 'primevue/confirmdialog';
 
 const { isDark, toggleTheme } = useTheme();
+const toast = useToast();
 const sidebarOpen = ref(false);
 const page = usePage();
 const currentUrl = computed(() => page.url);
+
+watch(() => page.props.flash, (flash) => {
+    if (flash?.success) {
+        toast.add({ severity: 'success', summary: 'Erfolg', detail: flash.success, life: 3000 });
+    }
+    if (flash?.error) {
+        toast.add({ severity: 'error', summary: 'Fehler', detail: flash.error, life: 5000 });
+    }
+    if (flash?.info) {
+        toast.add({ severity: 'info', summary: 'Info', detail: flash.info, life: 3000 });
+    }
+}, { deep: true });
 
 const navItems = [
     { label: 'Übersicht', icon: 'pi pi-home', href: '/', active: true },
@@ -89,4 +105,7 @@ function isActive(href) {
             <slot />
         </div>
     </main>
+
+    <Toast />
+    <ConfirmDialog />
 </template>

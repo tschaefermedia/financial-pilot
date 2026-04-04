@@ -5,6 +5,7 @@ import EmptyState from '@/Components/EmptyState.vue';
 import { useFormatters } from '@/Composables/useFormatters.js';
 import { useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { useConfirm } from 'primevue/useconfirm';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
@@ -14,6 +15,7 @@ import ToggleSwitch from 'primevue/toggleswitch';
 import Tag from 'primevue/tag';
 
 const { formatCurrency } = useFormatters();
+const confirm = useConfirm();
 
 const props = defineProps({
     accounts: { type: Array, default: () => [] },
@@ -82,9 +84,15 @@ function submit() {
 }
 
 function deleteAccount(id) {
-    if (confirm('Konto wirklich löschen? Buchungen werden nicht gelöscht, aber die Kontozuordnung entfernt.')) {
-        router.delete(`/accounts/${id}`);
-    }
+    confirm.require({
+        message: 'Konto wirklich löschen? Buchungen werden nicht gelöscht, aber die Kontozuordnung entfernt.',
+        header: 'Konto löschen',
+        icon: 'pi pi-trash',
+        acceptLabel: 'Löschen',
+        rejectLabel: 'Abbrechen',
+        acceptClass: 'p-button-danger',
+        accept: () => router.delete(`/accounts/${id}`),
+    });
 }
 </script>
 
@@ -98,7 +106,8 @@ function deleteAccount(id) {
             <div
                 v-for="account in accounts"
                 :key="account.id"
-                class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-5 relative"
+                class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-5 relative cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 transition-colors"
+                @click="openEdit(account)"
                 :class="{ 'opacity-50': !account.is_active }"
             >
                 <div class="flex items-start justify-between mb-3">
@@ -134,7 +143,9 @@ function deleteAccount(id) {
                 />
             </div>
         </div>
-        <EmptyState v-else message="Keine Konten vorhanden. Erstelle dein erstes Konto." icon="pi-wallet" />
+        <EmptyState v-else message="Keine Konten vorhanden." icon="pi-wallet">
+            <Button label="Erstes Konto erstellen" icon="pi pi-plus" size="small" @click="openCreate" />
+        </EmptyState>
 
         <Dialog v-model:visible="showDialog" :header="editingAccount ? 'Konto bearbeiten' : 'Neues Konto'" modal class="w-full max-w-md">
             <form @submit.prevent="submit" class="space-y-4 pt-2">

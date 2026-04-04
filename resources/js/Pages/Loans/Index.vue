@@ -5,6 +5,7 @@ import EmptyState from '@/Components/EmptyState.vue';
 import { useFormatters } from '@/Composables/useFormatters.js';
 import { useForm, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { useConfirm } from 'primevue/useconfirm';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
@@ -16,6 +17,7 @@ import Tag from 'primevue/tag';
 import ProgressBar from 'primevue/progressbar';
 
 const { formatCurrency, formatDate, formatNumber } = useFormatters();
+const confirm = useConfirm();
 
 const props = defineProps({
     loans: { type: Array, default: () => [] },
@@ -99,9 +101,15 @@ function submit() {
 }
 
 function deleteLoan(id) {
-    if (confirm('Darlehen wirklich löschen?')) {
-        router.delete(`/loans/${id}`);
-    }
+    confirm.require({
+        message: 'Darlehen wirklich löschen?',
+        header: 'Darlehen löschen',
+        icon: 'pi pi-trash',
+        acceptLabel: 'Löschen',
+        rejectLabel: 'Abbrechen',
+        acceptClass: 'p-button-danger',
+        accept: () => router.delete(`/loans/${id}`),
+    });
 }
 
 function directionLabel(dir) {
@@ -120,7 +128,7 @@ function typeLabel(type) {
         </PageHeader>
 
         <div v-if="loans.length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div v-for="loan in loans" :key="loan.id" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+            <div v-for="loan in loans" :key="loan.id" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6 cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 transition-colors" @click="router.visit(`/loans/${loan.id}`)"
                 <div class="flex items-start justify-between mb-4">
                     <div>
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ loan.name }}</h3>
@@ -129,10 +137,7 @@ function typeLabel(type) {
                             <Tag :value="directionLabel(loan.direction)" :severity="loan.direction === 'owed_by_me' ? 'danger' : 'success'" />
                         </div>
                     </div>
-                    <div class="flex gap-1">
-                        <Link :href="`/loans/${loan.id}`">
-                            <Button icon="pi pi-eye" text rounded size="small" />
-                        </Link>
+                    <div class="flex gap-1" @click.stop>
                         <Button icon="pi pi-pencil" text rounded size="small" @click="openEdit(loan)" />
                         <Button icon="pi pi-trash" text rounded size="small" severity="danger" @click="deleteLoan(loan.id)" />
                     </div>
@@ -166,7 +171,9 @@ function typeLabel(type) {
                 </div>
             </div>
         </div>
-        <EmptyState v-else message="Keine Darlehen vorhanden." icon="pi-building-columns" />
+        <EmptyState v-else message="Keine Darlehen vorhanden." icon="pi-building-columns">
+            <Button label="Erstes Darlehen erstellen" icon="pi pi-plus" size="small" @click="openCreate" />
+        </EmptyState>
 
         <!-- Create/Edit Dialog -->
         <Dialog v-model:visible="showDialog" :header="editingLoan ? 'Darlehen bearbeiten' : 'Neues Darlehen'" modal class="w-full max-w-lg">

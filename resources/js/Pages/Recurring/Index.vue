@@ -5,6 +5,7 @@ import EmptyState from '@/Components/EmptyState.vue';
 import { useFormatters } from '@/Composables/useFormatters.js';
 import { useForm, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import { useConfirm } from 'primevue/useconfirm';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
@@ -18,6 +19,7 @@ import ToggleSwitch from 'primevue/toggleswitch';
 import Tag from 'primevue/tag';
 
 const { formatCurrency, formatDate } = useFormatters();
+const confirm = useConfirm();
 
 const props = defineProps({
     templates: { type: Array, default: () => [] },
@@ -103,9 +105,15 @@ function submit() {
 }
 
 function deleteTemplate(id) {
-    if (confirm('Dauerauftrag wirklich löschen?')) {
-        router.delete(`/recurring/${id}`);
-    }
+    confirm.require({
+        message: 'Dauerauftrag wirklich löschen?',
+        header: 'Dauerauftrag löschen',
+        icon: 'pi pi-trash',
+        acceptLabel: 'Löschen',
+        rejectLabel: 'Abbrechen',
+        acceptClass: 'p-button-danger',
+        accept: () => router.delete(`/recurring/${id}`),
+    });
 }
 
 function generateNow(id) {
@@ -142,18 +150,18 @@ function generateNow(id) {
                         <span v-else class="text-gray-400 dark:text-gray-500 text-xs">—</span>
                     </template>
                 </Column>
-                <Column field="frequency" header="Frequenz" style="width: 130px">
+                <Column field="frequency" header="Frequenz" style="width: 130px" headerClass="hidden md:table-cell" bodyClass="hidden md:table-cell">
                     <template #body="{ data }">{{ frequencyLabel(data.frequency) }}</template>
                 </Column>
                 <Column field="next_due_date" header="Nächste Fälligkeit" style="width: 140px">
                     <template #body="{ data }">{{ formatDate(data.next_due_date) }}</template>
                 </Column>
-                <Column header="Auto" style="width: 60px">
+                <Column header="Auto" style="width: 60px" headerClass="hidden md:table-cell" bodyClass="hidden md:table-cell">
                     <template #body="{ data }">
                         <i :class="data.auto_generate ? 'pi pi-check-circle text-green-500' : 'pi pi-circle text-gray-300 dark:text-gray-500'" />
                     </template>
                 </Column>
-                <Column header="Konto" style="width: 130px">
+                <Column header="Konto" style="width: 130px" headerClass="hidden lg:table-cell" bodyClass="hidden lg:table-cell">
                     <template #body="{ data }">
                         <span v-if="data.account" class="text-xs text-gray-500 dark:text-gray-400">{{ data.account.name }}</span>
                         <span v-else class="text-gray-300 dark:text-gray-500 text-xs">—</span>
@@ -169,7 +177,9 @@ function generateNow(id) {
                     </template>
                 </Column>
             </DataTable>
-            <EmptyState v-else message="Keine Daueraufträge vorhanden." icon="pi-replay" />
+            <EmptyState v-else message="Keine Daueraufträge vorhanden." icon="pi-replay">
+                <Button label="Ersten Dauerauftrag erstellen" icon="pi pi-plus" size="small" @click="openCreate" />
+            </EmptyState>
         </div>
 
         <Dialog v-model:visible="showDialog" :header="editingTemplate ? 'Dauerauftrag bearbeiten' : 'Neuer Dauerauftrag'" modal class="w-full max-w-lg">

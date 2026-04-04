@@ -57,7 +57,7 @@ function formatDateForSubmit(date) {
 
 <template>
     <AppLayout>
-        <PageHeader :title="isEditing ? 'Buchung bearbeiten' : 'Neue Buchung'" />
+        <PageHeader :title="isEditing ? 'Buchung bearbeiten' : 'Neue Buchung'" backHref="/transactions" backLabel="Alle Buchungen" />
 
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6 max-w-2xl">
             <form @submit.prevent="submit" class="space-y-5">

@@ -123,7 +123,7 @@ const chartSeries = computed(() => [
 
 <template>
     <AppLayout>
-        <PageHeader :title="loan.name">
+        <PageHeader :title="loan.name" backHref="/loans" backLabel="Alle Darlehen">
             <Button label="Zahlung erfassen" icon="pi pi-plus" size="small" @click="showPaymentDialog = true" />
             <Button label="Buchung zuordnen" icon="pi pi-link" size="small" severity="secondary" @click="openMatchDialog" />
             <Button v-if="loan.type === 'bank'" label="Auto-Match" icon="pi pi-sync" size="small" severity="secondary" @click="autoMatch" />

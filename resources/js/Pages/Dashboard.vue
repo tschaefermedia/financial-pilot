@@ -7,9 +7,10 @@ import AiInsightsCard from '@/Components/AiInsightsCard.vue';
 import LoansSummaryCard from '@/Components/LoansSummaryCard.vue';
 import { useFormatters } from '@/Composables/useFormatters.js';
 import { useTheme } from '@/Composables/useTheme.js';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Button from 'primevue/button';
+import DatePicker from 'primevue/datepicker';
 
 const { formatCurrency, formatPercent } = useFormatters();
 const { isDark } = useTheme();
@@ -33,14 +34,18 @@ const props = defineProps({
     loansSummary: { type: Object, default: null },
 });
 
-const monthLabel = computed(() => {
-    if (!props.selectedMonth) return '';
-    const [year, month] = props.selectedMonth.split('-');
-    return new Intl.DateTimeFormat('de-DE', { month: 'long', year: 'numeric' }).format(new Date(year, month - 1));
-});
+const selectedDate = ref(props.selectedMonth ? (() => {
+    const [y, m] = props.selectedMonth.split('-');
+    return new Date(y, m - 1);
+})() : new Date());
 
 function navigateMonth(month) {
     router.get('/', { month }, { preserveState: true });
+}
+
+function onMonthSelect(date) {
+    const month = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+    navigateMonth(month);
 }
 
 const hasData = computed(() => props.monthlyData.length > 0);
@@ -136,7 +141,7 @@ const balanceSeries = computed(() => [
 
         <div class="flex items-center justify-center gap-3 mb-6">
             <Button icon="pi pi-chevron-left" text rounded size="small" :disabled="!prevMonth" @click="prevMonth && navigateMonth(prevMonth)" />
-            <span class="text-lg font-semibold text-gray-900 dark:text-white min-w-[10rem] text-center">{{ monthLabel }}</span>
+            <DatePicker v-model="selectedDate" view="month" dateFormat="MM yy" :manualInput="false" inputClass="text-center text-lg font-semibold border-none bg-transparent cursor-pointer w-48" @date-select="onMonthSelect" />
             <Button icon="pi pi-chevron-right" text rounded size="small" :disabled="!nextMonth" @click="nextMonth && navigateMonth(nextMonth)" />
         </div>
 
