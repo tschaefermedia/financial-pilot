@@ -17,7 +17,7 @@ services:
     image: ghcr.io/tschaefermedia/finanzpilot:latest
     volumes:
       - app-data:/var/www/html
-      - ./database:/var/www/html/database
+      - ./database.sqlite:/var/www/html/database/database.sqlite
     environment:
       - APP_NAME=FinanzPilot
       - APP_ENV=production

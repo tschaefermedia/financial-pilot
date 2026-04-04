@@ -33,7 +33,7 @@ php -r "echo 'base64:'.base64_encode(random_bytes(32)).PHP_EOL;"
 ### 3. Start
 
 ```bash
-mkdir -p database
+touch database.sqlite
 docker compose -f docker-compose.prod.yml up -d
 ```
 
