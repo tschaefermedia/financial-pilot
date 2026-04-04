@@ -4,6 +4,7 @@ import PageHeader from '@/Components/PageHeader.vue';
 import StatCard from '@/Components/StatCard.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import AiInsightsCard from '@/Components/AiInsightsCard.vue';
+import LoansSummaryCard from '@/Components/LoansSummaryCard.vue';
 import { useFormatters } from '@/Composables/useFormatters.js';
 import { useTheme } from '@/Composables/useTheme.js';
 import { computed } from 'vue';
@@ -24,6 +25,7 @@ const props = defineProps({
     balanceData: { type: Array, default: () => [] },
     accounts: { type: Array, default: () => [] },
     totalBalance: { type: Number, default: 0 },
+    loansSummary: { type: Object, default: null },
 });
 
 const hasData = computed(() => props.monthlyData.length > 0);
@@ -110,6 +112,11 @@ const balanceSeries = computed(() => [
                     />
                 </div>
             </div>
+        </div>
+
+        <!-- Loans Summary -->
+        <div v-if="loansSummary" class="mb-8">
+            <LoansSummaryCard :loans-summary="loansSummary" />
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

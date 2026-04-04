@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\Loan;
 use App\Models\Transaction;
+use App\Services\AmortizationService;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -65,6 +67,47 @@ class DashboardController extends Controller
 
         $totalBalance = $accounts->sum('current_balance');
 
+        // Loans summary
+        $loansSummary = null;
+        $loans = Loan::with('payments')->get();
+        if ($loans->isNotEmpty()) {
+            $amortization = new AmortizationService;
+            $owedByMe = ['principal' => 0, 'remaining' => 0, 'count' => 0];
+            $owedToMe = ['principal' => 0, 'remaining' => 0, 'count' => 0];
+
+            foreach ($loans as $loan) {
+                $summary = $amortization->calculateSummary($loan);
+                if ($loan->direction === 'owed_by_me') {
+                    $owedByMe['principal'] += (float) $loan->principal;
+                    $owedByMe['remaining'] += $summary['remainingBalance'];
+                    $owedByMe['count']++;
+                } else {
+                    $owedToMe['principal'] += (float) $loan->principal;
+                    $owedToMe['remaining'] += $summary['remainingBalance'];
+                    $owedToMe['count']++;
+                }
+            }
+
+            $loansSummary = [
+                'owedByMe' => [
+                    'count' => $owedByMe['count'],
+                    'totalPrincipal' => round($owedByMe['principal'], 2),
+                    'totalRemaining' => round($owedByMe['remaining'], 2),
+                    'progressPercent' => $owedByMe['principal'] > 0
+                        ? round((($owedByMe['principal'] - $owedByMe['remaining']) / $owedByMe['principal']) * 100, 1)
+                        : 0,
+                ],
+                'owedToMe' => [
+                    'count' => $owedToMe['count'],
+                    'totalPrincipal' => round($owedToMe['principal'], 2),
+                    'totalRemaining' => round($owedToMe['remaining'], 2),
+                    'progressPercent' => $owedToMe['principal'] > 0
+                        ? round((($owedToMe['principal'] - $owedToMe['remaining']) / $owedToMe['principal']) * 100, 1)
+                        : 0,
+                ],
+            ];
+        }
+
         return Inertia::render('Dashboard', [
             'accounts' => $accounts,
             'totalBalance' => round($totalBalance, 2),
@@ -84,6 +127,7 @@ class DashboardController extends Controller
                 'total' => round($c->total, 2),
             ])->values(),
             'balanceData' => $balanceData,
+            'loansSummary' => $loansSummary,
         ]);
     }
 }
