@@ -35,8 +35,15 @@ services:
     image: ghcr.io/tschaefermedia/finanzpilot:latest
     volumes:
       - app-data:/var/www/html
-      - ./.env:/var/www/html/.env
       - ./database:/var/www/html/database
+    environment:
+      - APP_NAME=FinanzPilot
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_URL=https://your-domain.example.com
+      - SESSION_DRIVER=file
+      - CACHE_STORE=file
+      - QUEUE_CONNECTION=sync
 
 volumes:
   app-data:
@@ -64,41 +71,31 @@ server {
 }
 ```
 
-### 4. Create .env
-
-```env
-APP_NAME=FinanzPilot
-APP_ENV=production
-APP_KEY=
-APP_DEBUG=false
-APP_URL=http://localhost
-
-DB_CONNECTION=sqlite
-SESSION_DRIVER=file
-CACHE_STORE=file
-QUEUE_CONNECTION=sync
-```
-
-### 5. Start and initialize
+### 4. Start
 
 ```bash
 mkdir -p database
 docker compose up -d
-docker compose exec php composer install --no-dev --optimize-autoloader
-docker compose exec php php artisan key:generate
-docker compose exec php php artisan migrate --force
-docker compose exec php php artisan db:seed --force
 ```
 
+On first start, the entrypoint automatically:
+- Creates `.env` from defaults
+- Generates the application key
+- Runs database migrations and seeds categories
+- Sets all file permissions
+
 The app is now running at `http://<your-server-ip>`.
+
+That's it. Two files (`docker-compose.yml` + `nginx.conf`), one command.
 
 ### Updating to a new version
 
 ```bash
 docker compose pull
 docker compose up -d
-docker compose exec php php artisan migrate --force
 ```
+
+Migrations run automatically on container start — no manual steps needed.
 
 ---
 
@@ -142,21 +139,74 @@ docker compose exec php php artisan migrate --force
 
 ---
 
-## Environment Configuration
+## Environment Variables Reference
 
-```env
-APP_NAME=FinanzPilot
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://finanzpilot.yourdomain.com
+All variables can be set via Docker Compose `environment:`, a bind-mounted `.env` file, or the auto-generated `.env` inside the container.
 
-DB_CONNECTION=sqlite
-SESSION_DRIVER=file
-CACHE_STORE=file
-QUEUE_CONNECTION=sync
+### Application
+
+| Variable     | Default            | Description                                             |
+| ------------ | ------------------ | ------------------------------------------------------- |
+| `APP_NAME`   | `FinanzPilot`      | Application name (shown in browser tab)                 |
+| `APP_ENV`    | `production`       | Environment: `production` or `local`                    |
+| `APP_KEY`    | *(auto-generated)* | Encryption key — see below |
+| `APP_DEBUG`  | `false`            | Set `true` for detailed error pages (development only)  |
+| `APP_URL`    | `http://localhost` | Public URL (used in exports, links)                     |
+| `APP_LOCALE` | `de`               | Application locale                                      |
+
+#### APP_KEY
+
+The app key is used for encryption (sessions, cookies). It is auto-generated on first container start. You can also set it explicitly in your `docker-compose.yml`:
+
+```yaml
+environment:
+  - APP_KEY=base64:your-key-here
 ```
 
-AI is configured through the Settings page in the app (stored in the database, not .env).
+To generate a key manually:
+
+```bash
+# Using PHP
+php -r "echo 'base64:'.base64_encode(random_bytes(32)).PHP_EOL;"
+
+# Using OpenSSL
+echo "base64:$(openssl rand -base64 32)"
+
+# From a running container
+docker compose exec php php artisan key:generate --show
+```
+
+Copy the output (e.g., `base64:RXxCXlba...`) and add it to `environment:` in your `docker-compose.yml`. Recommended for production — ensures the key persists across container recreations.
+
+### Database
+
+| Variable        | Default  | Description                                  |
+| --------------- | -------- | -------------------------------------------- |
+| `DB_CONNECTION` | `sqlite` | Database driver (only `sqlite` is supported) |
+
+### Session & Cache
+
+| Variable           | Default | Description                                |
+| ------------------ | ------- | ------------------------------------------ |
+| `SESSION_DRIVER`   | `file`  | Session storage: `file`, `cookie`, `array` |
+| `SESSION_LIFETIME` | `120`   | Session timeout in minutes                 |
+| `CACHE_STORE`      | `file`  | Cache backend: `file`, `array`             |
+| `QUEUE_CONNECTION` | `sync`  | Queue driver: `sync` (recommended)         |
+
+### Logging
+
+| Variable      | Default  | Description                                            |
+| ------------- | -------- | ------------------------------------------------------ |
+| `LOG_CHANNEL` | `stack`  | Log channel                                            |
+| `LOG_STACK`   | `single` | Stack channels                                         |
+| `LOG_LEVEL`   | `error`  | Minimum log level: `debug`, `info`, `warning`, `error` |
+
+### AI Configuration
+
+AI provider settings are managed through the **Settings** page in the app and stored in the database — not in `.env`. Supported providers:
+- **Claude** (Anthropic API)
+- **OpenAI** / OpenAI-compatible APIs
+- **Ollama** (local, fully offline)
 
 ---
 
@@ -166,21 +216,21 @@ AI is configured through the Settings page in the app (stored in the database, n
 ┌─────────────────────────────────────┐
 │  Docker Compose                     │
 │                                     │
-│  ┌───────────┐  ┌──────────────┐  │
-│  │   nginx   │  │     php      │  │
-│  │  :80      │→ │    :9000     │  │
-│  │  (proxy)  │  │  (fpm +      │  │
-│  └───────────┘  │  built assets)│  │
-│                  └──────────────┘  │
-│                        │           │
-│              database/database.sqlite │
+│  ┌───────────┐   ┌───────────────┐  │
+│  │   nginx   │   │     php       │  │
+│  │  :80      │ → │    :9000      │  │
+│  │  (proxy)  │   │  (fpm +       │  │
+│  └───────────┘   │  built assets)│  │
+│                  └───────────────┘  │
+│                        │            │
+│            database/database.sqlite │
 └─────────────────────────────────────┘
 ```
 
-| Service | Image | Purpose |
-|---------|-------|---------|
-| nginx | nginx:alpine | Reverse proxy, serves static files |
-| php | ghcr.io/tschaefermedia/finanzpilot | Laravel app + pre-built frontend assets |
+| Service | Image                              | Purpose                                 |
+| ------- | ---------------------------------- | --------------------------------------- |
+| nginx   | nginx:alpine                       | Reverse proxy, serves static files      |
+| php     | ghcr.io/tschaefermedia/finanzpilot | Laravel app + pre-built frontend assets |
 
 ---
 
@@ -274,23 +324,23 @@ The project includes a `.mcp.json` file. If using from a different location, add
 
 ### Available MCP Resources
 
-| Resource | URI | Description |
-|----------|-----|-------------|
-| Transactions | `finanzpilot://transactions` | Last 100 transactions |
-| Categories | `finanzpilot://categories` | Category tree with totals |
-| Summary | `finanzpilot://summary/current` | Current month summary |
-| Loans | `finanzpilot://loans` | Active loans with paid amounts |
-| Recurring | `finanzpilot://recurring` | Recurring templates |
-| Balance | `finanzpilot://balance` | Total balance + 6-month trend |
+| Resource     | URI                             | Description                    |
+| ------------ | ------------------------------- | ------------------------------ |
+| Transactions | `finanzpilot://transactions`    | Last 100 transactions          |
+| Categories   | `finanzpilot://categories`      | Category tree with totals      |
+| Summary      | `finanzpilot://summary/current` | Current month summary          |
+| Loans        | `finanzpilot://loans`           | Active loans with paid amounts |
+| Recurring    | `finanzpilot://recurring`       | Recurring templates            |
+| Balance      | `finanzpilot://balance`         | Total balance + 6-month trend  |
 
 ### Available MCP Tools
 
-| Tool | Description |
-|------|-------------|
-| `query_transactions` | Search/filter transactions by date, category, amount, text |
-| `add_transaction` | Create a new manual transaction |
-| `categorize_transaction` | Assign a category to a transaction |
-| `add_rule` | Create a categorization rule |
+| Tool                     | Description                                                |
+| ------------------------ | ---------------------------------------------------------- |
+| `query_transactions`     | Search/filter transactions by date, category, amount, text |
+| `add_transaction`        | Create a new manual transaction                            |
+| `categorize_transaction` | Assign a category to a transaction                         |
+| `add_rule`               | Create a categorization rule                               |
 
 ---
 
