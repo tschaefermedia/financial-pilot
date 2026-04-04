@@ -2,7 +2,9 @@
 
 namespace App\Services\AI;
 
+use App\Models\Loan;
 use App\Models\Transaction;
+use App\Services\AmortizationService;
 use Illuminate\Support\Facades\DB;
 
 class FinancialSnapshot
@@ -15,6 +17,7 @@ class FinancialSnapshot
         public readonly int $transactionCount,
         public readonly array $topGrowingCategories, // categories with increasing spend
         public readonly array $topShrinkingCategories,
+        public readonly array $loanSummary,          // aggregated loan stats
         public readonly string $hash,               // for caching
     ) {}
 
@@ -108,7 +111,31 @@ class FinancialSnapshot
         usort($growing, fn ($a, $b) => $b['change'] <=> $a['change']);
         usort($shrinking, fn ($a, $b) => $a['change'] <=> $b['change']);
 
-        $hash = hash('sha256', json_encode([$monthlyRatios, $categoryShares, $savingsRate]));
+        // Loan summary
+        $loanSummary = [];
+        $loans = Loan::with('payments')->get();
+        if ($loans->isNotEmpty()) {
+            $amortization = new AmortizationService;
+            $totalPrincipal = 0;
+            $totalRemaining = 0;
+            $count = 0;
+
+            foreach ($loans->where('direction', 'owed_by_me') as $loan) {
+                $summary = $amortization->calculateSummary($loan);
+                $totalPrincipal += (float) $loan->principal;
+                $totalRemaining += $summary['remainingBalance'];
+                $count++;
+            }
+
+            if ($count > 0) {
+                $loanSummary = [
+                    'count' => $count,
+                    'progressPercent' => $totalPrincipal > 0 ? round((($totalPrincipal - $totalRemaining) / $totalPrincipal) * 100, 1) : 0,
+                ];
+            }
+        }
+
+        $hash = hash('sha256', json_encode([$monthlyRatios, $categoryShares, $savingsRate, $loanSummary]));
 
         return new self(
             monthlyRatios: $monthlyRatios,
@@ -118,17 +145,18 @@ class FinancialSnapshot
             transactionCount: Transaction::whereRaw("strftime('%Y-%m', date) = ?", [$currentMonth])->count(),
             topGrowingCategories: array_slice($growing, 0, 3),
             topShrinkingCategories: array_slice($shrinking, 0, 3),
+            loanSummary: $loanSummary,
             hash: $hash,
         );
     }
 
     public function toPromptContext(): string
     {
-        $lines = ["Finanzdaten (anonymisiert, Einkommen = 100 Einheiten):\n"];
+        $lines = ["Finanzdaten (anonymisiert, alle Werte in Prozent vom Einkommen):\n"];
 
         $lines[] = 'Monatliche Übersicht (letzte 6 Monate):';
         foreach ($this->monthlyRatios as $m) {
-            $lines[] = "  {$m['month']}: Einnahmen=100, Ausgaben={$m['expenses']}%, Sparquote={$m['savings']}%";
+            $lines[] = "  {$m['month']}: Ausgaben={$m['expenses']}% vom Einkommen, Sparquote={$m['savings']}%";
         }
 
         $lines[] = "\nAusgaben nach Kategorie (aktueller Monat):";
@@ -151,6 +179,12 @@ class FinancialSnapshot
             foreach ($this->topShrinkingCategories as $c) {
                 $lines[] = "  {$c['category']}: {$c['change']}%";
             }
+        }
+
+        if (! empty($this->loanSummary)) {
+            $lines[] = "\nKredite:";
+            $lines[] = "  Anzahl: {$this->loanSummary['count']}";
+            $lines[] = "  Tilgungsfortschritt: {$this->loanSummary['progressPercent']}%";
         }
 
         return implode("\n", $lines);
