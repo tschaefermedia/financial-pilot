@@ -3,6 +3,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import StatCard from '@/Components/StatCard.vue';
 import { useFormatters } from '@/Composables/useFormatters.js';
+import { useTheme } from '@/Composables/useTheme.js';
 import { useForm, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import DataTable from 'primevue/datatable';
@@ -17,6 +18,10 @@ import TabView from 'primevue/tabview';
 import TabPanel from 'primevue/tabpanel';
 
 const { formatCurrency, formatDate, formatNumber } = useFormatters();
+const { isDark } = useTheme();
+
+const chartTextColor = computed(() => isDark.value ? '#9ca3af' : '#6b7280');
+const chartGridColor = computed(() => isDark.value ? '#374151' : '#e5e7eb');
 
 const props = defineProps({
     loan: { type: Object, required: true },
@@ -67,19 +72,22 @@ function paymentTypeLabel(type) {
 const hasSchedule = computed(() => props.summary?.schedule?.length > 0);
 
 const chartOptions = computed(() => ({
-    chart: { type: 'area', height: 300, toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
+    chart: { type: 'area', height: 300, toolbar: { show: false }, fontFamily: 'Inter, sans-serif', background: 'transparent' },
+    theme: { mode: isDark.value ? 'dark' : 'light' },
     colors: ['#3b82f6', '#ef4444'],
     xaxis: {
         categories: (props.summary?.schedule || []).filter((_, i) => i % 3 === 0).map(s => s.date.substring(0, 7)),
+        labels: { style: { colors: chartTextColor.value } },
     },
     yaxis: {
-        labels: { formatter: (v) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v) },
+        labels: { style: { colors: chartTextColor.value }, formatter: (v) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v) },
     },
+    grid: { borderColor: chartGridColor.value },
     dataLabels: { enabled: false },
     stroke: { curve: 'smooth', width: 2 },
     fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.05 } },
-    tooltip: { y: { formatter: (v) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(v) } },
-    legend: { position: 'top' },
+    tooltip: { theme: isDark.value ? 'dark' : 'light', y: { formatter: (v) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(v) } },
+    legend: { position: 'top', labels: { colors: chartTextColor.value } },
 }));
 
 const chartSeries = computed(() => [
@@ -106,13 +114,13 @@ const chartSeries = computed(() => [
         </div>
 
         <!-- Payoff chart -->
-        <div v-if="hasSchedule" class="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
-            <h3 class="text-sm font-semibold text-gray-700 mb-4">Tilgungsverlauf</h3>
+        <div v-if="hasSchedule" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6">
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">Tilgungsverlauf</h3>
             <apexchart type="area" :options="chartOptions" :series="chartSeries" height="300" />
         </div>
 
         <!-- Tabs: Payments + Schedule -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-100">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
             <TabView>
                 <TabPanel header="Zahlungen">
                     <DataTable v-if="loan.payments && loan.payments.length > 0" :value="loan.payments" class="text-sm">
@@ -129,12 +137,12 @@ const chartSeries = computed(() => [
                         </Column>
                         <Column header="Buchung" style="width: 200px">
                             <template #body="{ data }">
-                                <span v-if="data.transaction" class="text-xs text-gray-500">{{ data.transaction.description }}</span>
-                                <span v-else class="text-xs text-gray-400">Manuell</span>
+                                <span v-if="data.transaction" class="text-xs text-gray-500 dark:text-gray-400">{{ data.transaction.description }}</span>
+                                <span v-else class="text-xs text-gray-400 dark:text-gray-500">Manuell</span>
                             </template>
                         </Column>
                     </DataTable>
-                    <div v-else class="py-8 text-center text-gray-400 text-sm">Noch keine Zahlungen erfasst.</div>
+                    <div v-else class="py-8 text-center text-gray-400 dark:text-gray-500 text-sm">Noch keine Zahlungen erfasst.</div>
                 </TabPanel>
 
                 <TabPanel v-if="hasSchedule" header="Tilgungsplan">
@@ -164,15 +172,15 @@ const chartSeries = computed(() => [
         <Dialog v-model:visible="showPaymentDialog" header="Zahlung erfassen" modal class="w-full max-w-md">
             <form @submit.prevent="submitPayment" class="space-y-4 pt-2">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Datum</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Datum</label>
                     <DatePicker v-model="paymentForm.date" dateFormat="dd.mm.yy" showIcon class="w-full" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Betrag</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Betrag</label>
                     <InputNumber v-model="paymentForm.amount" mode="currency" currency="EUR" locale="de-DE" class="w-full" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Typ</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Typ</label>
                     <Select v-model="paymentForm.type" :options="paymentTypeOptions" optionLabel="label" optionValue="value" class="w-full" />
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
