@@ -104,7 +104,7 @@ function isSelected(id) {
                     </template>
                 </Column>
                 <Column field="description" header="Beschreibung" />
-                <Column field="counterparty" header="Empfänger" style="width: 180px" />
+                <Column field="counterparty" header="Empfänger" style="width: 180px" headerClass="hidden md:table-cell" bodyClass="hidden md:table-cell" />
                 <Column header="Kategorie" style="width: 220px">
                     <template #body="{ data }">
                         <TreeSelect

@@ -154,7 +154,7 @@ function commitImport() {
                     </template>
                 </Column>
                 <Column field="description" header="Beschreibung" style="min-width: 200px" />
-                <Column field="counterparty" header="Empfänger" style="min-width: 150px" />
+                <Column field="counterparty" header="Empfänger" style="min-width: 150px" headerClass="hidden md:table-cell" bodyClass="hidden md:table-cell" />
                 <Column header="Kategorie" style="width: 200px">
                     <template #body="{ data, index }">
                         <TreeSelect
@@ -167,7 +167,7 @@ function commitImport() {
                         />
                     </template>
                 </Column>
-                <Column header="Konfidenz" style="width: 100px">
+                <Column header="Konfidenz" style="width: 100px" headerClass="hidden lg:table-cell" bodyClass="hidden lg:table-cell">
                     <template #body="{ data }">
                         <Tag
                             :value="confidenceLabel(data.confidence, data.match_type)"

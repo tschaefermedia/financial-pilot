@@ -5,6 +5,7 @@ import EmptyState from '@/Components/EmptyState.vue';
 import { useFormatters } from '@/Composables/useFormatters.js';
 import { Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { useConfirm } from 'primevue/useconfirm';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import InputText from 'primevue/inputtext';
@@ -13,6 +14,7 @@ import Tag from 'primevue/tag';
 import Select from 'primevue/select';
 
 const { formatCurrency, formatDate } = useFormatters();
+const confirm = useConfirm();
 
 const props = defineProps({
     transactions: { type: Object, default: () => ({ data: [], links: [], meta: {} }) },
@@ -59,9 +61,15 @@ function sourceLabel(source) {
 }
 
 function deleteTransaction(id) {
-    if (confirm('Buchung wirklich löschen?')) {
-        router.delete(`/transactions/${id}`);
-    }
+    confirm.require({
+        message: 'Buchung wirklich löschen?',
+        header: 'Buchung löschen',
+        icon: 'pi pi-trash',
+        acceptLabel: 'Löschen',
+        rejectLabel: 'Abbrechen',
+        acceptClass: 'p-button-danger',
+        accept: () => router.delete(`/transactions/${id}`),
+    });
 }
 </script>
 
@@ -104,7 +112,8 @@ function deleteTransaction(id) {
                 :sortOrder="sortOrder"
                 @sort="onSort"
                 @page="onPage"
-                class="text-sm"
+                @row-click="(e) => router.visit(`/transactions/${e.data.id}/edit`)"
+                class="text-sm cursor-pointer"
             >
                 <Column field="date" header="Datum" sortable style="width: 120px">
                     <template #body="{ data }">{{ formatDate(data.date) }}</template>
@@ -117,36 +126,37 @@ function deleteTransaction(id) {
                     </template>
                 </Column>
                 <Column field="description" header="Beschreibung" />
-                <Column field="counterparty" header="Empfänger" />
+                <Column field="counterparty" header="Empfänger" headerClass="hidden md:table-cell" bodyClass="hidden md:table-cell" />
                 <Column field="category.name" header="Kategorie" style="width: 150px">
                     <template #body="{ data }">
                         <Tag v-if="data.category" :value="data.category.name" severity="info" />
                         <span v-else class="text-gray-400 dark:text-gray-500 text-xs">—</span>
                     </template>
                 </Column>
-                <Column field="source" header="Quelle" style="width: 120px">
+                <Column field="source" header="Quelle" style="width: 120px" headerClass="hidden lg:table-cell" bodyClass="hidden lg:table-cell">
                     <template #body="{ data }">
                         <span class="text-gray-500 dark:text-gray-400 text-xs">{{ sourceLabel(data.source) }}</span>
                     </template>
                 </Column>
-                <Column header="Konto" style="width: 130px">
+                <Column header="Konto" style="width: 130px" headerClass="hidden lg:table-cell" bodyClass="hidden lg:table-cell">
                     <template #body="{ data }">
                         <span v-if="data.account" class="text-xs text-gray-500 dark:text-gray-400">{{ data.account.name }}</span>
                         <span v-else class="text-gray-300 dark:text-gray-500 text-xs">—</span>
                     </template>
                 </Column>
-                <Column style="width: 100px">
+                <Column style="width: 60px">
                     <template #body="{ data }">
-                        <div class="flex gap-1">
-                            <Link :href="`/transactions/${data.id}/edit`">
-                                <Button icon="pi pi-pencil" text rounded size="small" />
-                            </Link>
+                        <div @click.stop>
                             <Button icon="pi pi-trash" text rounded size="small" severity="danger" @click="deleteTransaction(data.id)" />
                         </div>
                     </template>
                 </Column>
             </DataTable>
-            <EmptyState v-else message="Keine Buchungen vorhanden." icon="pi-list" />
+            <EmptyState v-else message="Keine Buchungen vorhanden." icon="pi-list">
+                <Link href="/transactions/create">
+                    <Button label="Erste Buchung erstellen" icon="pi pi-plus" size="small" />
+                </Link>
+            </EmptyState>
         </div>
     </AppLayout>
 </template>

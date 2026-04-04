@@ -4,6 +4,7 @@ import PageHeader from '@/Components/PageHeader.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import { useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { useConfirm } from 'primevue/useconfirm';
 import TreeTable from 'primevue/treetable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
@@ -11,6 +12,8 @@ import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import Select from 'primevue/select';
 import Tag from 'primevue/tag';
+
+const confirm = useConfirm();
 
 const props = defineProps({
     categories: { type: Array, default: () => [] },
@@ -67,9 +70,15 @@ function submit() {
 }
 
 function deleteCategory(id) {
-    if (confirm('Kategorie wirklich löschen?')) {
-        router.delete(`/categories/${id}`);
-    }
+    confirm.require({
+        message: 'Kategorie wirklich löschen?',
+        header: 'Kategorie löschen',
+        icon: 'pi pi-trash',
+        acceptLabel: 'Löschen',
+        rejectLabel: 'Abbrechen',
+        acceptClass: 'p-button-danger',
+        accept: () => router.delete(`/categories/${id}`),
+    });
 }
 </script>
 
@@ -106,7 +115,9 @@ function deleteCategory(id) {
                     </template>
                 </Column>
             </TreeTable>
-            <EmptyState v-else message="Keine Kategorien vorhanden." icon="pi-tags" />
+            <EmptyState v-else message="Keine Kategorien vorhanden." icon="pi-tags">
+                <Button label="Erste Kategorie erstellen" icon="pi pi-plus" size="small" @click="openCreate(null)" />
+            </EmptyState>
         </div>
 
         <Dialog v-model:visible="showDialog" :header="editingCategory ? 'Kategorie bearbeiten' : 'Neue Kategorie'" modal class="w-full max-w-md">
