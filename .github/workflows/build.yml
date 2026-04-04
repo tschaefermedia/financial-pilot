@@ -19,6 +19,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -56,7 +59,37 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Build changelog
+        id: changelog
+        uses: mikepenz/release-changelog-builder-action@v5
+        with:
+          mode: "COMMIT"
+          configurationJson: |
+            {
+              "categories": [
+                { "title": "### Features", "labels": [], "rules": [{"pattern": "^(feat|add|new|ship|implement)", "on_property": "title", "flags": "i"}] },
+                { "title": "### Fixes", "labels": [], "rules": [{"pattern": "^(fix|bug|patch|resolve)", "on_property": "title", "flags": "i"}] },
+                { "title": "### Other Changes", "labels": [] }
+              ],
+              "template": "#{{CHANGELOG}}\n\n### Docker\n```bash\ndocker pull ghcr.io/tschaefermedia/finanzpilot:${{ github.ref_name }}\n```"
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update CHANGELOG.md
+        uses: stefanzweifel/changelog-updater-action@v1
+        with:
+          latest-version: ${{ github.ref_name }}
+          release-notes: ${{ steps.changelog.outputs.changelog }}
+
+      - name: Commit CHANGELOG.md
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          branch: main
+          commit_message: "Update CHANGELOG.md for ${{ github.ref_name }} [skip ci]"
+          file_pattern: CHANGELOG.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
+          body: ${{ steps.changelog.outputs.changelog }}
