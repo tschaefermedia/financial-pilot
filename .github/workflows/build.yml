@@ -21,6 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: main
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -58,52 +59,37 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Generate changelog
+      - name: Build changelog
         id: changelog
-        run: |
-          PREVIOUS_TAG=$(git tag --sort=-v:refname | sed -n '2p')
-          if [ -z "$PREVIOUS_TAG" ]; then
-            RANGE="HEAD"
-          else
-            RANGE="${PREVIOUS_TAG}..HEAD"
-          fi
+        uses: mikepenz/release-changelog-builder-action@v5
+        with:
+          mode: "COMMIT"
+          configurationJson: |
+            {
+              "categories": [
+                { "title": "### Features", "labels": [], "rules": [{"pattern": "^(feat|add|new|ship|implement)", "on_property": "title", "flags": "i"}] },
+                { "title": "### Fixes", "labels": [], "rules": [{"pattern": "^(fix|bug|patch|resolve)", "on_property": "title", "flags": "i"}] },
+                { "title": "### Other Changes", "labels": [] }
+              ],
+              "template": "#{{CHANGELOG}}\n\n### Docker\n```bash\ndocker pull ghcr.io/tschaefermedia/finanzpilot:${{ github.ref_name }}\n```"
+            }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          {
-            echo 'body<<CHANGELOG_EOF'
+      - name: Update CHANGELOG.md
+        uses: stefanzweifel/changelog-updater-action@v1
+        with:
+          latest-version: ${{ github.ref_name }}
+          release-notes: ${{ steps.changelog.outputs.changelog }}
 
-            # Features
-            FEATURES=$(git log "$RANGE" --pretty=format:'- %s' --grep='^[Aa]dd\|^[Ff]eat\|^[Nn]ew\|^[Ss]hip\|^[Ii]mplement')
-            if [ -n "$FEATURES" ]; then
-              echo '### Features'
-              echo "$FEATURES"
-              echo ''
-            fi
-
-            # Fixes
-            FIXES=$(git log "$RANGE" --pretty=format:'- %s' --grep='^[Ff]ix\|^[Bb]ug\|^[Pp]atch\|^[Rr]esolve')
-            if [ -n "$FIXES" ]; then
-              echo '### Fixes'
-              echo "$FIXES"
-              echo ''
-            fi
-
-            # Other changes
-            OTHER=$(git log "$RANGE" --pretty=format:'%s' | grep -iv '^add\|^feat\|^new\|^ship\|^implement\|^fix\|^bug\|^patch\|^resolve' | sed 's/^/- /')
-            if [ -n "$OTHER" ]; then
-              echo '### Other Changes'
-              echo "$OTHER"
-              echo ''
-            fi
-
-            echo '### Docker'
-            echo '```bash'
-            echo 'docker pull ghcr.io/tschaefermedia/finanzpilot:${{ github.ref_name }}'
-            echo '```'
-
-            echo 'CHANGELOG_EOF'
-          } >> "$GITHUB_OUTPUT"
+      - name: Commit CHANGELOG.md
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          branch: main
+          commit_message: "Update CHANGELOG.md for ${{ github.ref_name }} [skip ci]"
+          file_pattern: CHANGELOG.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          body: ${{ steps.changelog.outputs.body }}
+          body: ${{ steps.changelog.outputs.changelog }}
