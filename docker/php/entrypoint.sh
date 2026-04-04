@@ -1,14 +1,22 @@
 #!/bin/sh
 
-# If public/index.php is missing, this is an empty volume — sync app files
-if [ ! -f /var/www/html/public/index.php ]; then
-    echo "Initializing application files..."
-    cp -r /opt/app-source/. /var/www/html/
-fi
+# Always sync application code from image into volume
+# This ensures code updates (including seeders, config, etc.) reach the volume on every deploy
+# Preserves: .env, storage/, database/database.sqlite (user data)
+echo "Syncing application files from image..."
 
-# Always sync built frontend assets (they live in the image, not the volume)
-mkdir -p /var/www/html/public/build
-cp -r /opt/app-source/public/build/. /var/www/html/public/build/
+# Back up user data we want to preserve
+[ -f /var/www/html/.env ] && cp /var/www/html/.env /tmp/.env.bak
+[ -f /var/www/html/database/database.sqlite ] && cp /var/www/html/database/database.sqlite /tmp/database.sqlite.bak
+[ -d /var/www/html/storage ] && cp -r /var/www/html/storage /tmp/storage.bak
+
+# Sync all app files from image
+cp -r /opt/app-source/. /var/www/html/
+
+# Restore preserved user data
+[ -f /tmp/.env.bak ] && mv /tmp/.env.bak /var/www/html/.env
+[ -f /tmp/database.sqlite.bak ] && mv /tmp/database.sqlite.bak /var/www/html/database/database.sqlite
+[ -d /tmp/storage.bak ] && cp -r /tmp/storage.bak/. /var/www/html/storage/ && rm -rf /tmp/storage.bak
 
 # Create .env from example if it doesn't exist
 if [ ! -f /var/www/html/.env ]; then
