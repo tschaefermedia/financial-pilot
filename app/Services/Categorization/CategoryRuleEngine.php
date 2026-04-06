@@ -2,6 +2,7 @@
 
 namespace App\Services\Categorization;
 
+use App\Models\Category;
 use App\Models\CategoryRule;
 use App\Models\Transaction;
 use Illuminate\Support\Collection;
@@ -12,7 +13,7 @@ class CategoryRuleEngine
      * Attempt to categorize a transaction using stored rules.
      * Returns the best match (highest priority, then highest confidence).
      */
-    public function categorize(string $description, ?string $counterparty = null): CategorizationResult
+    public function categorize(string $description, ?string $counterparty = null, ?float $amount = null): CategorizationResult
     {
         $rules = CategoryRule::with('category')
             ->orderByDesc('priority')
@@ -26,6 +27,9 @@ class CategoryRuleEngine
             $matched = $this->matchRule($rule, $description, $counterparty);
 
             if ($matched && $rule->confidence > $bestConfidence) {
+                if ($amount !== null && $rule->category && ! $this->isCategoryTypeCompatible($rule->category, $amount)) {
+                    continue;
+                }
                 $bestMatch = $rule;
                 $bestConfidence = $rule->confidence;
             }
@@ -51,7 +55,7 @@ class CategoryRuleEngine
     /**
      * Categorize multiple transactions in bulk. Returns an array keyed by index.
      *
-     * @param  array<int, array{description: string, counterparty: ?string}>  $items
+     * @param  array<int, array{description: string, counterparty: ?string, amount?: float}>  $items
      * @return array<int, CategorizationResult>
      */
     public function categorizeBulk(array $items): array
@@ -67,11 +71,15 @@ class CategoryRuleEngine
         foreach ($items as $index => $item) {
             $bestMatch = null;
             $bestConfidence = 0;
+            $amount = isset($item['amount']) ? (float) $item['amount'] : null;
 
             foreach ($rules as $rule) {
                 $matched = $this->matchRule($rule, $item['description'], $item['counterparty'] ?? null);
 
                 if ($matched && $rule->confidence > $bestConfidence) {
+                    if ($amount !== null && $rule->category && ! $this->isCategoryTypeCompatible($rule->category, $amount)) {
+                        continue;
+                    }
                     $bestMatch = $rule;
                     $bestConfidence = $rule->confidence;
                 }
@@ -217,6 +225,19 @@ class CategoryRuleEngine
         }
 
         return str_contains($searchText, $pattern);
+    }
+
+    private function isCategoryTypeCompatible(Category $category, float $amount): bool
+    {
+        if ($amount == 0 || $category->type === 'transfer') {
+            return true;
+        }
+
+        if ($amount > 0) {
+            return $category->type === 'income';
+        }
+
+        return $category->type === 'expense';
     }
 
     /**

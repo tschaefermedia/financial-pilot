@@ -42,6 +42,8 @@ const navItems = [
     { label: 'Import', icon: 'pi pi-upload', href: '/imports', active: true },
     { label: 'Darlehen', icon: 'pi pi-building-columns', href: '/loans', active: true },
     { label: 'Daueraufträge', icon: 'pi pi-replay', href: '/recurring', active: true },
+    { label: 'Kalender', icon: 'pi pi-calendar', href: '/calendar', active: true },
+    { label: 'Trends', icon: 'pi pi-chart-line', href: '/trends', active: true },
     { label: 'Export', icon: 'pi pi-download', href: '/export', active: true },
     { label: 'Einstellungen', icon: 'pi pi-cog', href: '/settings', active: true },
 ];

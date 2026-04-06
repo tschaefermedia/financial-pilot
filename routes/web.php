@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AiInsightsController;
+use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\CategoryAnalysisController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
@@ -10,6 +12,7 @@ use App\Http\Controllers\LoanController;
 use App\Http\Controllers\RecurringTemplateController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\TrendController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', DashboardController::class)->name('dashboard');
@@ -19,6 +22,7 @@ Route::resource('accounts', AccountController::class)->except(['show', 'create',
 
 Route::post('transactions/bulk-update-account', [TransactionController::class, 'bulkUpdateAccount'])->name('transactions.bulkUpdateAccount');
 Route::resource('transactions', TransactionController::class);
+Route::get('categories/analysis', CategoryAnalysisController::class)->name('categories.analysis');
 Route::resource('categories', CategoryController::class)->except(['show']);
 
 // Import pipeline
@@ -42,6 +46,16 @@ Route::post('loans/{loan}/payments', [LoanController::class, 'addPayment'])->nam
 Route::post('loans/{loan}/auto-match', [LoanController::class, 'autoMatch'])->name('loans.autoMatch');
 Route::get('loans/{loan}/unmatched-transactions', [LoanController::class, 'unmatchedTransactions'])->name('loans.unmatchedTransactions');
 Route::post('loans/{loan}/match-transaction', [LoanController::class, 'matchTransaction'])->name('loans.matchTransaction');
+
+// Calendar
+Route::get('calendar', [CalendarController::class, 'index'])->name('calendar.index');
+Route::post('calendar/payments', [CalendarController::class, 'store'])->name('calendar.store');
+Route::put('calendar/payments/{scheduledPayment}', [CalendarController::class, 'update'])->name('calendar.update');
+Route::delete('calendar/payments/{scheduledPayment}', [CalendarController::class, 'destroy'])->name('calendar.destroy');
+Route::post('calendar/payments/{scheduledPayment}/complete', [CalendarController::class, 'complete'])->name('calendar.complete');
+
+// Trends
+Route::get('trends', TrendController::class)->name('trends');
 
 // Export
 Route::get('export', [ExportController::class, 'index'])->name('export.index');
