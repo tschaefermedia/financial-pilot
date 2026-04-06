@@ -110,5 +110,4 @@ class RecurringTemplateController extends Controller
 
         $template->update(['next_due_date' => $nextDate]);
     }
-
 }

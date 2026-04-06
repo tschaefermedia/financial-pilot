@@ -320,5 +320,4 @@ class ImportController extends Controller
 
         return redirect()->back()->with('success', count($transactions).' Buchungen kategorisiert.');
     }
-
 }
