@@ -60,7 +60,7 @@ class TransactionController extends Controller
 
         $transactions = $query->paginate(25)->withQueryString();
 
-        $accounts = Account::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get();
+        $accounts = Account::activeOrdered()->get();
 
         return Inertia::render('Transactions/Index', [
             'transactions' => $transactions,
@@ -74,7 +74,7 @@ class TransactionController extends Controller
     {
         return Inertia::render('Transactions/Form', [
             'categories' => Category::tree(),
-            'accounts' => Account::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'accounts' => Account::activeOrdered()->get(),
         ]);
     }
 
@@ -86,7 +86,7 @@ class TransactionController extends Controller
             'description' => 'required|string|max:255',
             'counterparty' => 'nullable|string|max:255',
             'category_id' => 'nullable|exists:categories,id',
-            'notes' => 'nullable|string',
+            'notes' => 'nullable|string|max:10000',
             'account_id' => 'nullable|exists:accounts,id',
         ]);
 
@@ -102,7 +102,7 @@ class TransactionController extends Controller
         return Inertia::render('Transactions/Form', [
             'transaction' => $transaction->load('category'),
             'categories' => Category::tree(),
-            'accounts' => Account::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'accounts' => Account::activeOrdered()->get(),
         ]);
     }
 
@@ -114,7 +114,7 @@ class TransactionController extends Controller
             'description' => 'required|string|max:255',
             'counterparty' => 'nullable|string|max:255',
             'category_id' => 'nullable|exists:categories,id',
-            'notes' => 'nullable|string',
+            'notes' => 'nullable|string|max:10000',
             'account_id' => 'nullable|exists:accounts,id',
         ]);
 

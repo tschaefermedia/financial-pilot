@@ -4,19 +4,6 @@ namespace App\Services\Import;
 
 class SparkasseCamtV8Parser implements ParserInterface
 {
-    // Column name mappings (German headers from CSV-CAMT V8)
-    private const COLUMN_MAP = [
-        'Buchungstag' => 'date',
-        'Betrag' => 'amount',
-        'Verwendungszweck' => 'description',
-        'Beguenstigter/Zahlungspflichtiger' => 'counterparty',
-        'Kundenreferenz (End-to-End)' => 'reference',
-        'Buchungstext' => 'booking_type',
-        'Kontonummer/IBAN' => 'iban',
-        'Valutadatum' => 'value_date',
-        'Waehrung' => 'currency',
-    ];
-
     public function parse(string $filePath): array
     {
         $content = file_get_contents($filePath);

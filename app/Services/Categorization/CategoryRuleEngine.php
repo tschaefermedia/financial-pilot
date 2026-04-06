@@ -4,6 +4,7 @@ namespace App\Services\Categorization;
 
 use App\Models\CategoryRule;
 use App\Models\Transaction;
+use Illuminate\Support\Collection;
 
 class CategoryRuleEngine
 {
@@ -100,11 +101,14 @@ class CategoryRuleEngine
      * Record a manual categorization and update/create rules accordingly.
      * Called when a user manually assigns a category to a transaction.
      */
-    public function learn(Transaction $transaction, int $categoryId): void
+    public function learn(Transaction $transaction, int $categoryId, ?Collection $preloadedRules = null): void
     {
         // Find existing rule that matches this transaction for this category
-        $existingRule = CategoryRule::where('target_category_id', $categoryId)
-            ->get()
+        $rules = $preloadedRules
+            ? $preloadedRules->where('target_category_id', $categoryId)
+            : CategoryRule::where('target_category_id', $categoryId)->get();
+
+        $existingRule = $rules
             ->first(fn ($rule) => $this->matchRule($rule, $transaction->description, $transaction->counterparty));
 
         if ($existingRule) {
@@ -203,7 +207,10 @@ class CategoryRuleEngine
 
         if ($rule->is_regex) {
             try {
-                return (bool) preg_match('~'.str_replace('~', '\\~', $rule->pattern).'~iu', $searchText);
+                // Limit subject length to prevent ReDoS
+                $subject = mb_substr($searchText, 0, 1000);
+
+                return (bool) @preg_match('~'.str_replace('~', '\\~', $rule->pattern).'~iu', $subject);
             } catch (\Throwable) {
                 return false;
             }

@@ -2,7 +2,12 @@
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import EmptyState from '@/Components/EmptyState.vue';
+import { useFormatters } from '@/Composables/useFormatters.js';
+import { useToast } from 'primevue/usetoast';
 import { ref, computed } from 'vue';
+
+const { formatDateForSubmit } = useFormatters();
+const toast = useToast();
 import Button from 'primevue/button';
 import Select from 'primevue/select';
 import DatePicker from 'primevue/datepicker';
@@ -39,12 +44,6 @@ function exportMonth() {
 const dateFrom = ref(null);
 const dateTo = ref(null);
 const exportingRange = ref(false);
-
-function formatDateForSubmit(date) {
-    if (!date) return null;
-    const d = new Date(date);
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-}
 
 function exportRange() {
     if (!dateFrom.value || !dateTo.value) return;
@@ -117,7 +116,7 @@ function downloadPost(url, data, onDone) {
     })
     .catch(err => {
         console.error(err);
-        alert('Export fehlgeschlagen. Bitte erneut versuchen.');
+        toast.add({ severity: 'error', summary: 'Fehler', detail: 'Export fehlgeschlagen. Bitte erneut versuchen.', life: 5000 });
     })
     .finally(() => {
         if (onDone) onDone();

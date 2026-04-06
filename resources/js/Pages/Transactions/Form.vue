@@ -1,8 +1,11 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
+import { useFormatters } from '@/Composables/useFormatters.js';
 import { useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
+
+const { formatDateForSubmit } = useFormatters();
 import InputText from 'primevue/inputtext';
 import InputNumber from 'primevue/inputnumber';
 import DatePicker from 'primevue/datepicker';
@@ -48,11 +51,6 @@ function submit() {
     }
 }
 
-function formatDateForSubmit(date) {
-    if (!date) return null;
-    const d = new Date(date);
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-}
 </script>
 
 <template>

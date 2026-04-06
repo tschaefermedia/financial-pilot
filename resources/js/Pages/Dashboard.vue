@@ -7,7 +7,9 @@ import AiInsightsCard from '@/Components/AiInsightsCard.vue';
 import LoansSummaryCard from '@/Components/LoansSummaryCard.vue';
 import { useFormatters } from '@/Composables/useFormatters.js';
 import { useTheme } from '@/Composables/useTheme.js';
-import { computed, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, ref, watch }  from 'vue';
+
+const VueApexCharts = defineAsyncComponent(() => import('vue3-apexcharts'));
 import { router } from '@inertiajs/vue3';
 import Button from 'primevue/button';
 import DatePicker from 'primevue/datepicker';
@@ -163,16 +165,16 @@ const balanceSeries = computed(() => [
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
                     <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">Einnahmen vs. Ausgaben</h3>
-                    <apexchart type="bar" :options="monthlyChartOptions" :series="monthlySeries" height="300" />
+                    <VueApexCharts type="bar" :options="monthlyChartOptions" :series="monthlySeries" height="300" />
                 </div>
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
                     <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">Ausgaben nach Kategorie</h3>
-                    <apexchart type="donut" :options="categoryChartOptions" :series="categorySeries" height="300" />
+                    <VueApexCharts type="donut" :options="categoryChartOptions" :series="categorySeries" height="300" />
                 </div>
             </div>
             <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6">
                 <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">Kontoverlauf</h3>
-                <apexchart type="area" :options="balanceChartOptions" :series="balanceSeries" height="300" />
+                <VueApexCharts type="area" :options="balanceChartOptions" :series="balanceSeries" height="300" />
             </div>
             <div class="mt-6">
                 <AiInsightsCard />

@@ -50,10 +50,13 @@ class DashboardController extends Controller
             ->orderBy('month')
             ->get();
 
+        $monthStart = $selectedDate->copy()->startOfMonth()->toDateString();
+        $monthEnd = $selectedDate->copy()->endOfMonth()->toDateString();
+
         $categoryData = Transaction::select('categories.name', DB::raw('SUM(ABS(transactions.amount)) as total'))
             ->join('categories', 'transactions.category_id', '=', 'categories.id')
             ->where('transactions.amount', '<', 0)
-            ->whereRaw("strftime('%Y-%m', transactions.date) = ?", [$currentMonth])
+            ->whereBetween('transactions.date', [$monthStart, $monthEnd])
             ->groupBy('categories.name')
             ->orderByDesc('total')
             ->get();
@@ -75,9 +78,8 @@ class DashboardController extends Controller
         $savingsRate = $income > 0 ? round(($balance / $income) * 100, 1) : 0;
 
         // Account balances
-        $accounts = Account::where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('name')
+        $accounts = Account::activeOrdered()
+            ->withSum('transactions', 'amount')
             ->get()
             ->map(function ($account) {
                 return [

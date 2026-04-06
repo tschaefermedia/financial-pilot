@@ -41,7 +41,7 @@ class SettingsController extends Controller
         Setting::set('ai_provider', $validated['ai_provider']);
 
         if ($validated['ai_api_key'] !== null && $validated['ai_api_key'] !== '') {
-            Setting::set('ai_api_key', $validated['ai_api_key']);
+            Setting::set('ai_api_key', encrypt($validated['ai_api_key']));
         }
 
         Setting::set('ai_model', $validated['ai_model'] ?? '');
