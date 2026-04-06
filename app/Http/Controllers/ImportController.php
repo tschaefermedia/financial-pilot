@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Account;
 use App\Models\Category;
+use App\Models\CategoryRule;
 use App\Models\ImportBatch;
 use App\Models\ImportMapping;
 use App\Models\Transaction;
@@ -182,7 +183,7 @@ class ImportController extends Controller
             'duplicateCount' => count(array_filter($previewData, fn ($t) => $t['is_duplicate'])),
             'categorizedCount' => count(array_filter($previewData, fn ($t) => $t['category_id'] !== null)),
             'categories' => $categories,
-            'accounts' => Account::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'accounts' => Account::activeOrdered()->get(),
         ]);
     }
 
@@ -198,10 +199,10 @@ class ImportController extends Controller
             'transactions' => 'required|array|min:1',
             'transactions.*.date' => 'required|date',
             'transactions.*.amount' => 'required|numeric',
-            'transactions.*.description' => 'required|string',
-            'transactions.*.counterparty' => 'nullable|string',
-            'transactions.*.reference' => 'nullable|string',
-            'transactions.*.hash' => 'nullable|string',
+            'transactions.*.description' => 'required|string|max:1000',
+            'transactions.*.counterparty' => 'nullable|string|max:500',
+            'transactions.*.reference' => 'nullable|string|max:500',
+            'transactions.*.hash' => 'nullable|string|max:255',
             'transactions.*.category_id' => 'nullable|exists:categories,id',
             'account_id' => 'nullable|exists:accounts,id',
         ]);
@@ -223,6 +224,9 @@ class ImportController extends Controller
             ];
             $source = $sourceMap[$request->source_type] ?? 'manual';
 
+            // Preload all rules once to avoid N+1 in learn()
+            $allRules = CategoryRule::all();
+
             foreach ($request->transactions as $txData) {
                 $transaction = Transaction::create([
                     'date' => $txData['date'],
@@ -240,14 +244,18 @@ class ImportController extends Controller
 
                 // Learn from manual categorizations
                 if ($transaction->category_id) {
-                    $this->ruleEngine->learn($transaction, $transaction->category_id);
+                    $this->ruleEngine->learn($transaction, $transaction->category_id, $allRules);
                 }
             }
         });
 
-        // Clean up uploaded file
+        // Clean up uploaded file (with path traversal guard)
         if ($request->storage_path) {
-            Storage::delete($request->storage_path);
+            $fullPath = Storage::path($request->storage_path);
+            $importsDir = realpath(storage_path('app/imports')) ?: storage_path('app/imports');
+            if (str_starts_with(realpath($fullPath) ?: '', $importsDir)) {
+                Storage::delete($request->storage_path);
+            }
         }
 
         return redirect()->route('imports.index')

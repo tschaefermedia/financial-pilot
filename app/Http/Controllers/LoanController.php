@@ -71,7 +71,7 @@ class LoanController extends Controller
             'match_description' => 'nullable|string|max:255',
             'account_id' => 'nullable|exists:accounts,id',
             'direction' => 'required|in:owed_by_me,owed_to_me',
-            'notes' => 'nullable|string',
+            'notes' => 'nullable|string|max:10000',
         ]);
 
         $validated['interest_rate'] ??= 0;
@@ -96,7 +96,7 @@ class LoanController extends Controller
             'match_description' => 'nullable|string|max:255',
             'account_id' => 'nullable|exists:accounts,id',
             'direction' => 'required|in:owed_by_me,owed_to_me',
-            'notes' => 'nullable|string',
+            'notes' => 'nullable|string|max:10000',
         ]);
 
         $validated['interest_rate'] ??= 0;

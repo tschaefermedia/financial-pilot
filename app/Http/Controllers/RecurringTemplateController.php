@@ -21,7 +21,7 @@ class RecurringTemplateController extends Controller
         return Inertia::render('Recurring/Index', [
             'templates' => $templates,
             'categories' => Category::tree(),
-            'accounts' => Account::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+            'accounts' => Account::activeOrdered()->get(),
         ]);
     }
 

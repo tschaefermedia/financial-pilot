@@ -86,19 +86,32 @@ PROMPT;
     {
         $providerType = Setting::get('ai_provider', 'none');
 
+        $apiKey = null;
+        $rawKey = Setting::get('ai_api_key');
+        if ($rawKey) {
+            try {
+                $apiKey = decrypt($rawKey);
+            } catch (\Throwable) {
+                $apiKey = $rawKey; // Fallback for unencrypted legacy keys
+            }
+        }
+
+        $model = Setting::get('ai_model', '');
+        $baseUrl = Setting::get('ai_base_url', '');
+
         return match ($providerType) {
             'claude' => new ClaudeProvider(
-                apiKey: Setting::get('ai_api_key', ''),
-                model: Setting::get('ai_model', 'claude-sonnet-4-5-20250514'),
+                apiKey: $apiKey ?? '',
+                model: $model ?: 'claude-sonnet-4-5-20250514',
             ),
             'openai' => new OpenAiCompatibleProvider(
-                baseUrl: Setting::get('ai_base_url', 'https://api.openai.com'),
-                model: Setting::get('ai_model', 'gpt-4o'),
-                apiKey: Setting::get('ai_api_key'),
+                baseUrl: $baseUrl ?: 'https://api.openai.com',
+                model: $model ?: 'gpt-4o',
+                apiKey: $apiKey,
             ),
             'ollama' => new OpenAiCompatibleProvider(
-                baseUrl: Setting::get('ai_base_url', 'http://localhost:11434'),
-                model: Setting::get('ai_model', 'llama3'),
+                baseUrl: $baseUrl ?: 'http://localhost:11434',
+                model: $model ?: 'llama3',
                 apiKey: null,
             ),
             default => null,

@@ -1,10 +1,11 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
-import { Link, usePage } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+import { Link, usePage, router } from '@inertiajs/vue3';
 import { useTheme } from '@/Composables/useTheme.js';
 import { useToast } from 'primevue/usetoast';
 import Toast from 'primevue/toast';
 import ConfirmDialog from 'primevue/confirmdialog';
+import { onUnmounted } from 'vue';
 
 const { isDark, toggleTheme } = useTheme();
 const toast = useToast();
@@ -12,7 +13,8 @@ const sidebarOpen = ref(false);
 const page = usePage();
 const currentUrl = computed(() => page.url);
 
-watch(() => page.props.flash, (flash) => {
+function showFlashMessages() {
+    const flash = page.props.flash;
     if (flash?.success) {
         toast.add({ severity: 'success', summary: 'Erfolg', detail: flash.success, life: 3000 });
     }
@@ -22,7 +24,15 @@ watch(() => page.props.flash, (flash) => {
     if (flash?.info) {
         toast.add({ severity: 'info', summary: 'Info', detail: flash.info, life: 3000 });
     }
-}, { deep: true });
+}
+
+const removeFinishListener = router.on('finish', () => {
+    showFlashMessages();
+});
+
+onUnmounted(() => {
+    removeFinishListener();
+});
 
 const navItems = [
     { label: 'Übersicht', icon: 'pi pi-home', href: '/', active: true },

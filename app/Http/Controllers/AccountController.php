@@ -10,7 +10,9 @@ class AccountController extends Controller
 {
     public function index()
     {
-        $accounts = Account::orderBy('sort_order')
+        $accounts = Account::withSum('transactions', 'amount')
+            ->withCount('transactions')
+            ->orderBy('sort_order')
             ->orderBy('name')
             ->get()
             ->map(function ($account) {
@@ -25,7 +27,7 @@ class AccountController extends Controller
                     'sort_order' => $account->sort_order,
                     'is_active' => $account->is_active,
                     'current_balance' => $account->current_balance,
-                    'transaction_count' => $account->transactions()->count(),
+                    'transaction_count' => $account->transactions_count,
                 ];
             });
 

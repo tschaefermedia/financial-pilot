@@ -5,7 +5,9 @@ import StatCard from '@/Components/StatCard.vue';
 import { useFormatters } from '@/Composables/useFormatters.js';
 import { useTheme } from '@/Composables/useTheme.js';
 import { useForm, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, defineAsyncComponent } from 'vue';
+
+const VueApexCharts = defineAsyncComponent(() => import('vue3-apexcharts'));
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
@@ -17,7 +19,7 @@ import Tag from 'primevue/tag';
 import TabView from 'primevue/tabview';
 import TabPanel from 'primevue/tabpanel';
 
-const { formatCurrency, formatDate, formatNumber } = useFormatters();
+const { formatCurrency, formatDate, formatNumber, formatDateForSubmit } = useFormatters();
 const { isDark } = useTheme();
 
 const chartTextColor = computed(() => isDark.value ? '#9ca3af' : '#6b7280');
@@ -40,12 +42,6 @@ const paymentTypeOptions = [
     { label: 'Sondertilgung', value: 'extra' },
     { label: 'Manuell', value: 'manual' },
 ];
-
-function formatDateForSubmit(date) {
-    if (!date) return null;
-    const d = new Date(date);
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-}
 
 function submitPayment() {
     paymentForm.transform((data) => ({
@@ -73,6 +69,7 @@ async function openMatchDialog() {
     showMatchDialog.value = true;
     try {
         const response = await fetch(`/loans/${props.loan.id}/unmatched-transactions`);
+        if (!response.ok) throw new Error('Failed to load transactions');
         unmatchedTransactions.value = await response.json();
     } finally {
         loadingTransactions.value = false;
@@ -140,7 +137,7 @@ const chartSeries = computed(() => [
         <!-- Payoff chart -->
         <div v-if="hasSchedule" class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6">
             <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-4">Tilgungsverlauf</h3>
-            <apexchart type="area" :options="chartOptions" :series="chartSeries" height="300" />
+            <VueApexCharts type="area" :options="chartOptions" :series="chartSeries" height="300" />
         </div>
 
         <!-- Tabs: Payments + Schedule -->

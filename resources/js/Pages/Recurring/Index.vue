@@ -18,7 +18,7 @@ import TreeSelect from 'primevue/treeselect';
 import ToggleSwitch from 'primevue/toggleswitch';
 import Tag from 'primevue/tag';
 
-const { formatCurrency, formatDate } = useFormatters();
+const { formatCurrency, formatDate, formatDateForSubmit } = useFormatters();
 const confirm = useConfirm();
 
 const props = defineProps({
@@ -79,12 +79,6 @@ function openEdit(template) {
     form.auto_generate = template.auto_generate;
     form.account_id = template.account_id;
     showDialog.value = true;
-}
-
-function formatDateForSubmit(date) {
-    if (!date) return null;
-    const d = new Date(date);
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
 function submit() {

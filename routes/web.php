@@ -56,4 +56,4 @@ Route::delete('settings/clear-all', [SettingsController::class, 'clearAll'])->na
 
 // AI Insights (JSON API for dashboard widget)
 Route::get('api/insights', [AiInsightsController::class, 'index'])->name('api.insights');
-Route::post('api/insights/refresh', [AiInsightsController::class, 'refresh'])->name('api.insights.refresh');
+Route::post('api/insights/refresh', [AiInsightsController::class, 'refresh'])->middleware('throttle:5,1')->name('api.insights.refresh');

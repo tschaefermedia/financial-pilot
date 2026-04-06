@@ -155,17 +155,17 @@ class AmortizationService
 
         $transactions = $query->get();
 
+        // Pre-load existing payment months to avoid N+1
+        $existingMonths = $loan->payments->map(fn ($p) => $p->date->format('Y-m'))->toArray();
+
         foreach ($transactions as $transaction) {
             // Check if payment day is close
             $txDay = $transaction->date->day;
             if (abs($txDay - $loan->payment_day) <= 3) {
                 // Check if we don't already have a payment for this month
-                $existingPayment = $loan->payments()
-                    ->whereYear('date', $transaction->date->year)
-                    ->whereMonth('date', $transaction->date->month)
-                    ->exists();
+                $monthKey = $transaction->date->format('Y-m');
 
-                if (! $existingPayment) {
+                if (! in_array($monthKey, $existingMonths)) {
                     LoanPayment::create([
                         'loan_id' => $loan->id,
                         'transaction_id' => $transaction->id,
@@ -173,6 +173,7 @@ class AmortizationService
                         'amount' => abs((float) $transaction->amount),
                         'type' => 'scheduled',
                     ]);
+                    $existingMonths[] = $monthKey;
                     $matched++;
                 }
             }

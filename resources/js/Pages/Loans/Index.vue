@@ -3,7 +3,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import { useFormatters } from '@/Composables/useFormatters.js';
-import { useForm, Link, router } from '@inertiajs/vue3';
+import { useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { useConfirm } from 'primevue/useconfirm';
 import Button from 'primevue/button';
@@ -16,7 +16,7 @@ import Textarea from 'primevue/textarea';
 import Tag from 'primevue/tag';
 import ProgressBar from 'primevue/progressbar';
 
-const { formatCurrency, formatDate, formatNumber } = useFormatters();
+const { formatCurrency, formatDate, formatNumber, formatDateForSubmit } = useFormatters();
 const confirm = useConfirm();
 
 const props = defineProps({
@@ -78,12 +78,6 @@ function openEdit(loan) {
     form.direction = loan.direction;
     form.notes = loan.notes || '';
     showDialog.value = true;
-}
-
-function formatDateForSubmit(date) {
-    if (!date) return null;
-    const d = new Date(date);
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
 function submit() {

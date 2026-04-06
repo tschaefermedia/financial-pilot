@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -32,6 +33,13 @@ class Account extends Model
 
     public function getCurrentBalanceAttribute(): float
     {
-        return round((float) $this->starting_balance + (float) $this->transactions()->sum('amount'), 2);
+        $txSum = $this->transactions_sum_amount ?? $this->transactions()->sum('amount');
+
+        return round((float) $this->starting_balance + (float) $txSum, 2);
+    }
+
+    public function scopeActiveOrdered(Builder $query): Builder
+    {
+        return $query->where('is_active', true)->orderBy('sort_order')->orderBy('name');
     }
 }

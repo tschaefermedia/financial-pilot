@@ -36,5 +36,11 @@ export function useFormatters() {
         return percentFormatter.format((num ?? 0) / 100);
     }
 
-    return { formatCurrency, formatDate, formatNumber, formatPercent };
+    function formatDateForSubmit(date) {
+        if (!date) return null;
+        const d = new Date(date);
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    return { formatCurrency, formatDate, formatNumber, formatPercent, formatDateForSubmit };
 }
