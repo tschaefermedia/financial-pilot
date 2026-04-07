@@ -85,6 +85,9 @@ function deleteCategory(id) {
 <template>
     <AppLayout>
         <PageHeader title="Kategorien">
+            <a href="/categories/analysis" class="inline-flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:underline mr-3">
+                <i class="pi pi-chart-pie text-xs"></i> Analyse
+            </a>
             <Button label="Neue Kategorie" icon="pi pi-plus" size="small" @click="openCreate()" />
         </PageHeader>
 

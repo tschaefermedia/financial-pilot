@@ -119,18 +119,21 @@ class FinancialSnapshot
             $loanDetails = [];
             $totalMonthlyBurden = 0;
 
+            $loanIndex = 0;
+
             foreach ($loans as $loan) {
                 $summary = $amortization->calculateSummary($loan);
                 $monthlyPayment = $summary['monthlyPayment'] ?? 0;
                 $totalMonthlyBurden += $monthlyPayment;
 
                 $loanDetails[] = [
-                    'name' => $loan->name,
+                    'name' => 'Kredit '.chr(65 + $loanIndex),
                     'type' => $loan->type === 'bank' ? 'Bankdarlehen' : 'Informell',
                     'direction' => $loan->direction === 'owed_by_me' ? 'Schulden' : 'Forderung',
                     'progressPercent' => $summary['progressPercent'],
                     'monthlyPercent' => $currentIncome > 0 ? round(($monthlyPayment / $currentIncome) * 100, 1) : 0,
                 ];
+                $loanIndex++;
             }
 
             $loanSummary = [

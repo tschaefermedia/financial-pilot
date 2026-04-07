@@ -145,6 +145,7 @@ class ImportController extends Controller
         $categorizationItems = array_map(fn ($p) => [
             'description' => $p->description,
             'counterparty' => $p->counterparty,
+            'amount' => $p->amount,
         ], $parsed);
         $categorizations = $this->ruleEngine->categorizeBulk($categorizationItems);
 
