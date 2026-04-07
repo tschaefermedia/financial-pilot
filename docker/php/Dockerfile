@@ -1,5 +1,5 @@
-# Stage 1: Build frontend assets
-FROM node:22-alpine AS frontend
+# Stage 1: Build frontend assets (always on native platform, not emulated)
+FROM --platform=$BUILDPLATFORM node:22-alpine AS frontend
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
